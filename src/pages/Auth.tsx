@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
 import { toast } from 'sonner';
 import { Gift } from 'lucide-react';
 
@@ -15,7 +15,6 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<'user' | 'company'>('user');
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -38,17 +37,12 @@ const Auth = () => {
           setLoading(false);
           return;
         }
-        const { error } = await signUp(email, password, fullName, role);
+        const { error } = await signUp(email, password, fullName);
         if (error) {
           toast.error(error.message);
         } else {
           toast.success('Account created successfully!');
-          // Redirect based on role
-          if (role === 'company') {
-            navigate('/company');
-          } else {
-            navigate('/dashboard');
-          }
+          navigate('/dashboard');
         }
       }
     } catch (error) {
@@ -81,37 +75,17 @@ const Auth = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required={!isLogin}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Account Type</Label>
-                    <RadioGroup value={role} onValueChange={(v) => setRole(v as 'user' | 'company')}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="user" id="user" />
-                        <Label htmlFor="user" className="font-normal cursor-pointer">
-                          User - Join giveaways
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="company" id="company" />
-                        <Label htmlFor="company" className="font-normal cursor-pointer">
-                          Company - Create giveaways
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="John Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                  />
+                </div>
               )}
               
               <div className="space-y-2">

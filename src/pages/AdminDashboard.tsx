@@ -4,9 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LogOut, Users, Building2, Gift, Trophy } from 'lucide-react';
+import { LogOut, Users, Building2, Gift, Trophy, Plus, UserPlus } from 'lucide-react';
 
 interface User {
   id: string;
@@ -14,6 +19,12 @@ interface User {
   full_name: string;
   role: string;
   created_at: string;
+}
+
+interface CompanyUser {
+  id: string;
+  email: string;
+  full_name: string | null;
 }
 
 interface Stats {
@@ -26,6 +37,7 @@ interface Stats {
 const AdminDashboard = () => {
   const { signOut } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [companies, setCompanies] = useState<CompanyUser[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalCompanies: 0,
@@ -33,9 +45,25 @@ const AdminDashboard = () => {
     totalWinners: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
+  const [isGiveawayDialogOpen, setIsGiveawayDialogOpen] = useState(false);
+  const [companyFormData, setCompanyFormData] = useState({
+    email: '',
+    password: '',
+    full_name: '',
+  });
+  const [giveawayFormData, setGiveawayFormData] = useState({
+    company_id: '',
+    title: '',
+    description: '',
+    image_url: '',
+    prize_value: '',
+    end_date: '',
+  });
 
   useEffect(() => {
     fetchData();
+    fetchCompanies();
   }, []);
 
   const fetchData = async () => {
@@ -90,6 +118,103 @@ const AdminDashboard = () => {
     }
   };
 
+  const fetchCompanies = async () => {
+    try {
+      const { data: companyRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'company');
+
+      if (!companyRoles) return;
+
+      const companyIds = companyRoles.map(r => r.user_id);
+
+      if (companyIds.length === 0) {
+        setCompanies([]);
+        return;
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', companyIds);
+
+      setCompanies(profiles || []);
+    } catch (error) {
+      console.error('Error fetching companies:', error);
+    }
+  };
+
+  const handleCreateCompany = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: companyFormData.email,
+        password: companyFormData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: companyFormData.full_name,
+          }
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Create company role
+        const { error: roleError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: authData.user.id, role: 'company' });
+
+        if (roleError) throw roleError;
+
+        toast.success('Company account created successfully!');
+        setIsCompanyDialogOpen(false);
+        setCompanyFormData({ email: '', password: '', full_name: '' });
+        fetchData();
+        fetchCompanies();
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create company account');
+      console.error(error);
+    }
+  };
+
+  const handleCreateGiveaway = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      const { error } = await supabase.from('giveaways').insert({
+        company_id: giveawayFormData.company_id,
+        title: giveawayFormData.title,
+        description: giveawayFormData.description,
+        image_url: giveawayFormData.image_url || null,
+        prize_value: giveawayFormData.prize_value ? parseFloat(giveawayFormData.prize_value) : null,
+        end_date: giveawayFormData.end_date,
+      });
+
+      if (error) throw error;
+
+      toast.success('Giveaway created successfully!');
+      setIsGiveawayDialogOpen(false);
+      setGiveawayFormData({
+        company_id: '',
+        title: '',
+        description: '',
+        image_url: '',
+        prize_value: '',
+        end_date: '',
+      });
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to create giveaway');
+      console.error(error);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
@@ -118,6 +243,142 @@ const AdminDashboard = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Action Buttons */}
+        <div className="flex gap-4 mb-8">
+          <Dialog open={isCompanyDialogOpen} onOpenChange={setIsCompanyDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Create Company Account
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create Company Account</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateCompany} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company_email">Email *</Label>
+                  <Input
+                    id="company_email"
+                    type="email"
+                    value={companyFormData.email}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, email: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company_password">Password *</Label>
+                  <Input
+                    id="company_password"
+                    type="password"
+                    value={companyFormData.password}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, password: e.target.value })}
+                    required
+                    minLength={6}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="company_name">Company Name *</Label>
+                  <Input
+                    id="company_name"
+                    value={companyFormData.full_name}
+                    onChange={(e) => setCompanyFormData({ ...companyFormData, full_name: e.target.value })}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Create Company
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isGiveawayDialogOpen} onOpenChange={setIsGiveawayDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Giveaway
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Create Giveaway for Company</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreateGiveaway} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="company_select">Select Company *</Label>
+                  <Select value={giveawayFormData.company_id} onValueChange={(value) => setGiveawayFormData({ ...giveawayFormData, company_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((company) => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.full_name || company.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="giveaway_title">Title *</Label>
+                  <Input
+                    id="giveaway_title"
+                    value={giveawayFormData.title}
+                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, title: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="giveaway_description">Description *</Label>
+                  <Textarea
+                    id="giveaway_description"
+                    value={giveawayFormData.description}
+                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, description: e.target.value })}
+                    required
+                    rows={4}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="giveaway_image">Image URL</Label>
+                  <Input
+                    id="giveaway_image"
+                    type="url"
+                    value={giveawayFormData.image_url}
+                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, image_url: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="giveaway_prize">Prize Value ($)</Label>
+                  <Input
+                    id="giveaway_prize"
+                    type="number"
+                    step="0.01"
+                    value={giveawayFormData.prize_value}
+                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, prize_value: e.target.value })}
+                    placeholder="100.00"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="giveaway_end">End Date *</Label>
+                  <Input
+                    id="giveaway_end"
+                    type="datetime-local"
+                    value={giveawayFormData.end_date}
+                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, end_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Create Giveaway
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
