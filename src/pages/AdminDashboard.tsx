@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { LogOut, Users, Building2, Gift, Trophy, Plus, UserPlus } from 'lucide-react';
+import { LogOut, Users, Building2, Gift, Trophy, Plus, UserPlus, Upload } from 'lucide-react';
 
 interface User {
   id: string;
@@ -60,6 +60,8 @@ const AdminDashboard = () => {
     prize_value: '',
     end_date: '',
   });
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -183,15 +185,51 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleImageUpload = async (file: File): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError } = await supabase.storage
+        .from('giveaway-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('giveaway-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+      return null;
+    }
+  };
+
   const handleCreateGiveaway = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
+      setUploadingImage(true);
+      
+      let imageUrl = giveawayFormData.image_url;
+
+      // If a file is selected, upload it
+      if (selectedImage) {
+        const uploadedUrl = await handleImageUpload(selectedImage);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
+      }
+
       const { error } = await supabase.from('giveaways').insert({
         company_id: giveawayFormData.company_id,
         title: giveawayFormData.title,
         description: giveawayFormData.description,
-        image_url: giveawayFormData.image_url || null,
+        image_url: imageUrl || null,
         prize_value: giveawayFormData.prize_value ? parseFloat(giveawayFormData.prize_value) : null,
         end_date: giveawayFormData.end_date,
       });
@@ -208,10 +246,13 @@ const AdminDashboard = () => {
         prize_value: '',
         end_date: '',
       });
+      setSelectedImage(null);
       fetchData();
     } catch (error) {
       toast.error('Failed to create giveaway');
       console.error(error);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -341,14 +382,41 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="giveaway_image">Image URL</Label>
-                  <Input
-                    id="giveaway_image"
-                    type="url"
-                    value={giveawayFormData.image_url}
-                    onChange={(e) => setGiveawayFormData({ ...giveawayFormData, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <Label htmlFor="giveaway_image">Image</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="giveaway_image_file"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedImage(file);
+                            setGiveawayFormData({ ...giveawayFormData, image_url: '' });
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="text-center text-sm text-muted-foreground">or</div>
+                    <Input
+                      id="giveaway_image_url"
+                      type="url"
+                      value={giveawayFormData.image_url}
+                      onChange={(e) => {
+                        setGiveawayFormData({ ...giveawayFormData, image_url: e.target.value });
+                        setSelectedImage(null);
+                      }}
+                      placeholder="https://example.com/image.jpg"
+                    />
+                  </div>
+                  {selectedImage && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedImage.name}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="giveaway_prize">Prize Value ($)</Label>
@@ -371,8 +439,8 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Create Giveaway
+                <Button type="submit" className="w-full" disabled={uploadingImage}>
+                  {uploadingImage ? 'Uploading...' : 'Create Giveaway'}
                 </Button>
               </form>
             </DialogContent>
