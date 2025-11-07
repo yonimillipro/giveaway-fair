@@ -70,25 +70,30 @@ const AdminDashboard = () => {
 
   const fetchData = async () => {
     try {
-      // Fetch all users with their roles
+      // Fetch all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          id,
-          email,
-          full_name,
-          created_at,
-          user_roles (role)
-        `)
+        .select('id, email, full_name, created_at')
         .order('created_at', { ascending: false });
 
       if (profilesError) throw profilesError;
 
+      // Fetch all user roles
+      const { data: roles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Create a map of user_id to role
+      const roleMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+
+      // Combine profiles with roles
       const usersData = (profiles || []).map((profile: any) => ({
         id: profile.id,
         email: profile.email,
         full_name: profile.full_name || 'N/A',
-        role: profile.user_roles?.[0]?.role || 'user',
+        role: roleMap.get(profile.id) || 'user',
         created_at: profile.created_at,
       }));
 
@@ -211,6 +216,12 @@ const AdminDashboard = () => {
 
   const handleCreateGiveaway = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate company selection
+    if (!giveawayFormData.company_id) {
+      toast.error('Please select a company');
+      return;
+    }
 
     try {
       setUploadingImage(true);
@@ -349,16 +360,24 @@ const AdminDashboard = () => {
               <form onSubmit={handleCreateGiveaway} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company_select">Select Company *</Label>
-                  <Select value={giveawayFormData.company_id} onValueChange={(value) => setGiveawayFormData({ ...giveawayFormData, company_id: value })}>
+                  <Select 
+                    value={giveawayFormData.company_id} 
+                    onValueChange={(value) => setGiveawayFormData({ ...giveawayFormData, company_id: value })}
+                    required
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose a company" />
                     </SelectTrigger>
                     <SelectContent>
-                      {companies.map((company) => (
-                        <SelectItem key={company.id} value={company.id}>
-                          {company.full_name || company.email}
-                        </SelectItem>
-                      ))}
+                      {companies.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground">No companies available</div>
+                      ) : (
+                        companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.full_name || company.email}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
