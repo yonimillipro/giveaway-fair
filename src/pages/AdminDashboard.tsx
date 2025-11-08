@@ -156,43 +156,38 @@ const AdminDashboard = () => {
     e.preventDefault();
 
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: companyFormData.email,
-        password: companyFormData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: companyFormData.full_name,
-          }
-        }
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error('You must be logged in');
+        return;
+      }
+
+      // Call Edge Function to create company with service role
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-company`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: companyFormData.email,
+          password: companyFormData.password,
+          full_name: companyFormData.full_name,
+        }),
       });
 
-      if (authError) throw authError;
+      const result = await response.json();
 
-      if (authData.user) {
-        // Delete any existing user role first
-        await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', authData.user.id)
-          .eq('role', 'user');
-
-        // Create company role using upsert to handle duplicates
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .upsert({ user_id: authData.user.id, role: 'company' }, {
-            onConflict: 'user_id,role'
-          });
-
-        if (roleError) throw roleError;
-
-        toast.success('Company account created successfully!');
-        setIsCompanyDialogOpen(false);
-        setCompanyFormData({ email: '', password: '', full_name: '' });
-        fetchData();
-        fetchCompanies();
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create company account');
       }
+
+      toast.success('Company account created successfully!');
+      setIsCompanyDialogOpen(false);
+      setCompanyFormData({ email: '', password: '', full_name: '' });
+      fetchData();
+      fetchCompanies();
     } catch (error: any) {
       toast.error(error.message || 'Failed to create company account');
       console.error(error);
