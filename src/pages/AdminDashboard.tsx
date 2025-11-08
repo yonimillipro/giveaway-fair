@@ -171,10 +171,19 @@ const AdminDashboard = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Create company role
+        // Delete any existing user role first
+        await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', authData.user.id)
+          .eq('role', 'user');
+
+        // Create company role using upsert to handle duplicates
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert({ user_id: authData.user.id, role: 'company' });
+          .upsert({ user_id: authData.user.id, role: 'company' }, {
+            onConflict: 'user_id,role'
+          });
 
         if (roleError) throw roleError;
 
