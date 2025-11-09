@@ -53,37 +53,54 @@ serve(async (req) => {
     // Get company details from request
     const { email, password, full_name } = await req.json()
 
-    // Create the auth user
-    const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        full_name
-      }
-    })
+    // Check if user already exists
+    const { data: existingUser } = await supabaseClient.auth.admin.listUsers()
+    const userExists = existingUser?.users.find(u => u.email === email)
 
-    if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    let userId: string
+    
+    if (userExists) {
+      // User exists, just update their role and profile
+      userId = userExists.id
+      
+      // Update profile
+      await supabaseClient
+        .from('profiles')
+        .update({ full_name })
+        .eq('id', userId)
+    } else {
+      // Create new auth user
+      const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name
+        }
+      })
+
+      if (authError) {
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      userId = authData.user.id
     }
 
-    // Delete any existing user role (from trigger)
+    // Delete any existing roles for this user
     await supabaseClient
       .from('user_roles')
       .delete()
-      .eq('user_id', authData.user.id)
+      .eq('user_id', userId)
 
     // Insert company role
     const { error: roleError } = await supabaseClient
       .from('user_roles')
-      .insert({ user_id: authData.user.id, role: 'company' })
+      .insert({ user_id: userId, role: 'company' })
 
     if (roleError) {
-      // Rollback: delete the created user
-      await supabaseClient.auth.admin.deleteUser(authData.user.id)
       return new Response(
         JSON.stringify({ error: roleError.message }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -94,8 +111,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         user: { 
-          id: authData.user.id, 
-          email: authData.user.email,
+          id: userId, 
+          email,
           full_name 
         } 
       }),
