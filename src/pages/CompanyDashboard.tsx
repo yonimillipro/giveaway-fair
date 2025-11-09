@@ -108,10 +108,13 @@ const CompanyDashboard = () => {
 
   const handleSelectWinner = async (giveawayId: string) => {
     try {
-      // Get all entries for this giveaway
+      // Get all entries for this giveaway with user details
       const { data: entries, error: entriesError } = await supabase
         .from('giveaway_entries')
-        .select('user_id')
+        .select(`
+          user_id,
+          profiles!inner(full_name, email)
+        `)
         .eq('giveaway_id', giveawayId);
 
       if (entriesError) throw entriesError;
@@ -141,7 +144,8 @@ const CompanyDashboard = () => {
         .update({ status: 'ended' })
         .eq('id', giveawayId);
 
-      toast.success('Winner selected successfully!');
+      const winnerProfile = winner.profiles as any;
+      toast.success(`Winner selected: ${winnerProfile?.full_name || winnerProfile?.email}!`);
       fetchMyGiveaways();
     } catch (error: any) {
       if (error.code === '23505') {
@@ -150,6 +154,30 @@ const CompanyDashboard = () => {
         toast.error('Failed to select winner');
         console.error(error);
       }
+    }
+  };
+
+  const viewWinner = async (giveawayId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('winners')
+        .select(`
+          user_id,
+          selected_at,
+          profiles!inner(full_name, email)
+        `)
+        .eq('giveaway_id', giveawayId)
+        .single();
+
+      if (error) throw error;
+
+      const winnerProfile = data.profiles as any;
+      toast.info(
+        `Winner: ${winnerProfile?.full_name || 'Unknown'} (${winnerProfile?.email})\nSelected: ${new Date(data.selected_at).toLocaleString()}`
+      );
+    } catch (error) {
+      toast.error('Failed to fetch winner details');
+      console.error(error);
     }
   };
 
@@ -275,13 +303,19 @@ const CompanyDashboard = () => {
                       className="w-full"
                       onClick={() => handleSelectWinner(giveaway.id)}
                     >
+                      <Trophy className="w-4 h-4 mr-2" />
                       Select Winner
                     </Button>
                   )}
                   {giveaway.status === 'ended' && (
-                    <div className="text-center py-2 text-sm text-muted-foreground">
-                      Winner Selected
-                    </div>
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => viewWinner(giveaway.id)}
+                    >
+                      <Trophy className="w-4 h-4 mr-2" />
+                      View Winner
+                    </Button>
                   )}
                 </CardContent>
               </Card>
