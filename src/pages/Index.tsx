@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { GiveawayCard } from '@/components/GiveawayCard';
 import { supabase } from '@/integrations/supabase/client';
-import { Gift, Trophy, Users } from 'lucide-react';
+import { Gift, Trophy, Users, Tag } from 'lucide-react';
 import heroImage from '@/assets/hero-image.jpg';
 
 interface Giveaway {
@@ -100,6 +100,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" onClick={handleGetStarted} className="text-lg shadow-glow">
                 {user ? 'Go to Dashboard' : 'Get Started Free'}
+              </Button>
+              <Button size="lg" variant="secondary" onClick={() => navigate('/promotions')}>
+                <Tag className="w-5 h-5 mr-2" />
+                View Promotions
               </Button>
               {!user && (
                 <Button size="lg" variant="outline" onClick={() => navigate('/auth')}>
