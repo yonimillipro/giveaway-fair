@@ -2,7 +2,12 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -54,16 +59,16 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        'gradient-primary': 'var(--gradient-primary)',
-        'gradient-secondary': 'var(--gradient-secondary)',
-        'gradient-hero': 'var(--gradient-hero)',
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-secondary": "var(--gradient-secondary)",
+        "gradient-hero": "var(--gradient-hero)",
       },
       boxShadow: {
-        'glow': 'var(--shadow-glow)',
-        'card': 'var(--shadow-card)',
+        glow: "var(--shadow-glow)",
+        card: "var(--shadow-card)",
       },
       transitionTimingFunction: {
-        'smooth': 'var(--transition-smooth)',
+        smooth: "var(--transition-smooth)",
       },
       keyframes: {
         "accordion-down": {
@@ -89,5 +94,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  // plugins: [require("tailwindcss-animate")],
 } satisfies Config;
