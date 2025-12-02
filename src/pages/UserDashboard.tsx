@@ -251,7 +251,6 @@ const UserDashboard = () => {
                     endDate={giveaway.end_date}
                     entriesCount={giveaway.entries_count}
                     hasJoined={giveaway.has_joined}
-                    onJoin={handleJoinGiveaway}
                     onView={handleGiveawayView}
                   />
                 ))}
