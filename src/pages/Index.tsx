@@ -187,8 +187,7 @@ const Index = () => {
               </p>
             </div>
           ) : (
-            // MODIFIED: Changed lg:grid-cols-3 to lg:grid-cols-2 for a two-column style
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {giveaways.map((giveaway) => (
                 <GiveawayCard
                   key={giveaway.id}
@@ -197,9 +196,7 @@ const Index = () => {
                   prizeValue={giveaway.prize_value || undefined}
                   endDate={giveaway.end_date}
                   entriesCount={giveaway.entries_count}
-                  onView={() =>
-                    user ? navigate("/dashboard") : navigate("/auth")
-                  }
+                  onView={(id) => navigate(`/giveaway/${id}`)}
                 />
               ))}
             </div>
