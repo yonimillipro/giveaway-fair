@@ -1,29 +1,29 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext"; // Corrected path
-import { Button } from "../components/ui/button"; // Corrected path
+import { useAuth } from "../contexts/AuthContext";
+import { Button } from "../components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "../components/ui/card"; // Corrected path
-import { Input } from "../components/ui/input"; // Corrected path
-import { Label } from "../components/ui/label"; // Corrected path
-import { Textarea } from "../components/ui/textarea"; // Corrected path
+} from "../components/ui/card";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from "../components/ui/tabs"; // Corrected path
+} from "../components/ui/tabs";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../components/ui/dialog"; // Corrected path
-import { supabase } from "../integrations/supabase/client"; // Corrected path
+} from "../components/ui/dialog";
+import { supabase } from "../integrations/supabase/client";
 import { toast } from "sonner";
 import {
   LogOut,
@@ -35,8 +35,9 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { GiveawayCard } from "../components/GiveawayCard"; // Corrected path
+import { GiveawayCard } from "../components/GiveawayCard";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 interface Giveaway {
   id: string;
@@ -270,16 +271,17 @@ const CompanyDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow-md">
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b shadow-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+          <h1 className="text-2xl font-bold text-primary">
             Company Dashboard
           </h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300 hidden sm:inline">
-              Company: {user?.email}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
+              {user?.email}
             </span>
+            <ThemeToggle />
             <Button variant="outline" onClick={handleSignOut}>
               <LogOut className="w-4 h-4 mr-2" />
               Sign Out
