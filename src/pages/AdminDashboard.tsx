@@ -42,8 +42,10 @@ import {
   Upload,
   Pencil,
   Trash2,
+  Save,
 } from "lucide-react";
 import { format } from "date-fns";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 interface User {
   id: string;
@@ -62,8 +64,8 @@ interface CompanyUser {
 interface Giveaway {
   id: string;
   title: string;
-  description: string; // Added description for editing
-  image_url: string | null; // Added image_url for editing
+  description: string;
+  image_url: string | null;
   prize_value: number | null;
   end_date: string;
   company_id: string;
@@ -93,8 +95,15 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
   const [isGiveawayDialogOpen, setIsGiveawayDialogOpen] = useState(false);
-  // NEW STATE for Update/Edit functionality
   const [editingGiveaway, setEditingGiveaway] = useState<Giveaway | null>(null);
+  
+  // User edit state
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
+  const [userFormData, setUserFormData] = useState({
+    full_name: "",
+    role: "",
+  });
 
   const [companyFormData, setCompanyFormData] = useState({
     email: "",
@@ -112,7 +121,6 @@ const AdminDashboard = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Helper to reset giveaway form data
   const resetGiveawayForm = () => {
     setGiveawayFormData({
       company_id: "",
@@ -463,14 +471,94 @@ const AdminDashboard = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    // ... (handleDeleteUser logic remains the same)
-    if (!confirm("Are you sure you want to delete this user?")) return;
+    if (!confirm("Are you sure you want to delete this user? This action cannot be undone.")) return;
 
     try {
-      toast.error("User deletion requires admin privileges via backend");
-    } catch (error) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ user_id: userId }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to delete user");
+      }
+
+      toast.success("User deleted successfully!");
+      const companyProfiles = await fetchCompanies();
+      fetchData();
+      fetchGiveaways(companyProfiles);
+    } catch (error: any) {
       console.error("Error deleting user:", error);
-      toast.error("Failed to delete user");
+      toast.error(error.message || "Failed to delete user");
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setUserFormData({
+      full_name: user.full_name || "",
+      role: user.role,
+    });
+    setIsUserDialogOpen(true);
+  };
+
+  const handleSaveUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("You must be logged in");
+        return;
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-user`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: editingUser.id,
+            full_name: userFormData.full_name,
+            role: userFormData.role,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update user");
+      }
+
+      toast.success("User updated successfully!");
+      setIsUserDialogOpen(false);
+      setEditingUser(null);
+      const companyProfiles = await fetchCompanies();
+      fetchData();
+      fetchGiveaways(companyProfiles);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      toast.error(error.message || "Failed to update user");
     }
   };
 
@@ -480,10 +568,13 @@ const AdminDashboard = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <Button variant="outline" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button variant="outline" onClick={signOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -881,7 +972,7 @@ const AdminDashboard = () => {
         </Card>
         {/* -------------------------------------------------------------------------- */}
 
-        {/* Users Table (C, R, D) ... (remains the same) ...*/}
+        {/* Users Table */}
         <Card>
           <CardHeader>
             <CardTitle>All Users</CardTitle>
@@ -892,51 +983,118 @@ const AdminDashboard = () => {
                 Loading users...
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Full Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.full_name}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            user.role === "admin" ? "default" : "secondary"
-                          }
-                        >
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        {user.role !== "admin" && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
-                          >
-                            Delete
-                          </Button>
-                        )}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Full Name</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.full_name}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              user.role === "admin" ? "default" : user.role === "company" ? "outline" : "secondary"
+                            }
+                          >
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(user.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            {user.role !== "admin" && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteUser(user.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Edit User Dialog */}
+        <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSaveUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="user_email">Email</Label>
+                <Input
+                  id="user_email"
+                  value={editingUser?.email || ""}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user_full_name">Full Name</Label>
+                <Input
+                  id="user_full_name"
+                  value={userFormData.full_name}
+                  onChange={(e) =>
+                    setUserFormData({ ...userFormData, full_name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user_role">Role</Label>
+                <Select
+                  value={userFormData.role}
+                  onValueChange={(value) =>
+                    setUserFormData({ ...userFormData, role: value })
+                  }
+                  disabled={editingUser?.role === "admin"}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="company">Company</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                {editingUser?.role === "admin" && (
+                  <p className="text-xs text-muted-foreground">Admin roles cannot be changed</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full">
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
