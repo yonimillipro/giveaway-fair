@@ -51,7 +51,7 @@ serve(async (req) => {
     }
 
     // Get company details from request
-    const { email, password, full_name } = await req.json()
+    const { email, password, full_name, logo_url } = await req.json()
 
     // Check if user already exists
     const { data: existingUser } = await supabaseClient.auth.admin.listUsers()
@@ -63,10 +63,10 @@ serve(async (req) => {
       // User exists, just update their role and profile
       userId = userExists.id
       
-      // Update profile
+      // Update profile with logo
       await supabaseClient
         .from('profiles')
-        .update({ full_name })
+        .update({ full_name, logo_url })
         .eq('id', userId)
     } else {
       // Create new auth user
@@ -87,6 +87,14 @@ serve(async (req) => {
       }
       
       userId = authData.user.id
+
+      // Update profile with logo_url after user is created
+      if (logo_url) {
+        await supabaseClient
+          .from('profiles')
+          .update({ logo_url })
+          .eq('id', userId)
+      }
     }
 
     // Delete any existing roles for this user

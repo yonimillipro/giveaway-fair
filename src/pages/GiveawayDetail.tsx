@@ -8,6 +8,13 @@ import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import {
   ArrowLeft,
   Calendar,
   Users,
@@ -33,17 +40,26 @@ interface GiveawayDetail {
   company_id: string;
 }
 
+interface GiveawayImage {
+  id: string;
+  image_url: string;
+  display_order: number;
+}
+
 const GiveawayDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const [giveaway, setGiveaway] = useState<GiveawayDetail | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [entriesCount, setEntriesCount] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [likesCount, setLikesCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [likingInProgress, setLikingInProgress] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -63,6 +79,22 @@ const GiveawayDetail = () => {
       if (giveawayError) throw giveawayError;
       setGiveaway(giveawayData);
 
+      // Fetch giveaway images
+      const { data: imagesData } = await supabase
+        .from("giveaway_images")
+        .select("*")
+        .eq("giveaway_id", id)
+        .order("display_order", { ascending: true });
+
+      // Build images array - use giveaway_images if available, otherwise fallback to image_url
+      const imageUrls: string[] = [];
+      if (imagesData && imagesData.length > 0) {
+        imageUrls.push(...imagesData.map((img: GiveawayImage) => img.image_url));
+      } else if (giveawayData.image_url) {
+        imageUrls.push(giveawayData.image_url);
+      }
+      setImages(imageUrls);
+
       // Fetch entries count
       const { count } = await supabase
         .from("giveaway_entries")
@@ -71,7 +103,15 @@ const GiveawayDetail = () => {
 
       setEntriesCount(count || 0);
 
-      // Check if user has joined
+      // Fetch likes count
+      const { count: likeCount } = await supabase
+        .from("giveaway_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("giveaway_id", id);
+
+      setLikesCount(likeCount || 0);
+
+      // Check if user has joined and liked
       if (user) {
         const { data: entryData } = await supabase
           .from("giveaway_entries")
@@ -81,6 +121,15 @@ const GiveawayDetail = () => {
           .single();
 
         setHasJoined(!!entryData);
+
+        const { data: likeData } = await supabase
+          .from("giveaway_likes")
+          .select("id")
+          .eq("giveaway_id", id)
+          .eq("user_id", user.id)
+          .single();
+
+        setHasLiked(!!likeData);
       }
     } catch (error) {
       console.error("Error fetching giveaway:", error);
@@ -124,6 +173,53 @@ const GiveawayDetail = () => {
     }
   };
 
+  const handleLike = async () => {
+    if (!user) {
+      toast.info("Please sign in to like this giveaway");
+      navigate("/auth");
+      return;
+    }
+
+    if (!giveaway || likingInProgress) return;
+
+    setLikingInProgress(true);
+    try {
+      if (hasLiked) {
+        // Unlike
+        const { error } = await supabase
+          .from("giveaway_likes")
+          .delete()
+          .eq("giveaway_id", giveaway.id)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        setHasLiked(false);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        // Like
+        const { error } = await supabase
+          .from("giveaway_likes")
+          .insert({ user_id: user.id, giveaway_id: giveaway.id });
+
+        if (error) {
+          if (error.code === "23505") {
+            setHasLiked(true);
+          } else {
+            throw error;
+          }
+        } else {
+          setHasLiked(true);
+          setLikesCount((prev) => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like");
+    } finally {
+      setLikingInProgress(false);
+    }
+  };
+
   const handleShare = async () => {
     try {
       await navigator.share({
@@ -134,6 +230,15 @@ const GiveawayDetail = () => {
     } catch {
       navigator.clipboard.writeText(window.location.href);
       toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const handleBack = () => {
+    // Check if there's history to go back to, otherwise go home
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate("/");
     }
   };
 
@@ -175,11 +280,6 @@ const GiveawayDetail = () => {
     addSuffix: true,
   });
 
-  // Mock multiple images for gallery effect (using the same image)
-  const images = giveaway.image_url
-    ? [giveaway.image_url]
-    : [];
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
@@ -189,7 +289,7 @@ const GiveawayDetail = () => {
         <div className="container mx-auto px-4 pt-4">
           <Button
             variant="ghost"
-            onClick={() => navigate(-1)}
+            onClick={handleBack}
             className="gap-2 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -201,41 +301,48 @@ const GiveawayDetail = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Section */}
             <div className="space-y-4">
-              {/* Main Image */}
+              {/* Main Image Carousel */}
               <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted">
                 {images.length > 0 ? (
-                  <img
-                    src={images[currentImageIndex]}
-                    alt={giveaway.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src =
-                        "https://placehold.co/600x600/A0A0A0/FFFFFF?text=Giveaway";
-                    }}
-                  />
+                  <Carousel className="w-full h-full">
+                    <CarouselContent className="h-full">
+                      {images.map((img, index) => (
+                        <CarouselItem key={index} className="h-full">
+                          <img
+                            src={img}
+                            alt={`${giveaway.title} - Image ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.onerror = null;
+                              target.src =
+                                "https://placehold.co/600x600/A0A0A0/FFFFFF?text=Giveaway";
+                            }}
+                          />
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {images.length > 1 && (
+                      <>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                      </>
+                    )}
+                  </Carousel>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <Gift className="w-24 h-24 text-muted-foreground/30" />
                   </div>
                 )}
 
-                {/* Image Counter */}
-                {images.length > 0 && (
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm font-medium">
-                    {currentImageIndex + 1}/{images.length}
-                  </div>
-                )}
-
                 {/* View Count */}
-                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm z-10">
                   <Eye className="w-4 h-4" />
                   <span>{entriesCount * 3 + 34} views</span>
                 </div>
 
                 {/* Posted Time */}
-                <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm">
+                <div className="absolute top-4 right-4 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm z-10">
                   Posted {format(new Date(giveaway.start_date), "MMM dd")}
                 </div>
               </div>
@@ -244,21 +351,16 @@ const GiveawayDetail = () => {
               {images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {images.map((img, index) => (
-                    <button
+                    <div
                       key={index}
-                      onClick={() => setCurrentImageIndex(index)}
-                      className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                        currentImageIndex === index
-                          ? "border-primary"
-                          : "border-transparent opacity-60 hover:opacity-100"
-                      }`}
+                      className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 border-transparent opacity-60 hover:opacity-100 transition-all"
                     >
                       <img
                         src={img}
                         alt=""
                         className="w-full h-full object-cover"
                       />
-                    </button>
+                    </div>
                   ))}
                 </div>
               )}
@@ -266,20 +368,27 @@ const GiveawayDetail = () => {
 
             {/* Details Section */}
             <div className="space-y-6">
-              {/* Price Badge */}
-              {giveaway.prize_value && (
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl md:text-4xl font-bold text-primary">
-                    ${giveaway.prize_value.toLocaleString()}
-                  </span>
-                  <span className="text-lg text-muted-foreground">
-                    Prize Value
-                  </span>
-                  <button className="ml-auto p-2 hover:bg-muted rounded-full transition-colors">
-                    <Heart className="w-6 h-6" />
-                  </button>
-                </div>
-              )}
+              {/* Price Badge and Like */}
+              <div className="flex items-center gap-3">
+                {giveaway.prize_value && (
+                  <>
+                    <span className="text-3xl md:text-4xl font-bold text-primary">
+                      ${giveaway.prize_value.toLocaleString()}
+                    </span>
+                    <span className="text-lg text-muted-foreground">
+                      Prize Value
+                    </span>
+                  </>
+                )}
+                <button 
+                  onClick={handleLike}
+                  disabled={likingInProgress}
+                  className={`ml-auto p-2 hover:bg-muted rounded-full transition-colors flex items-center gap-1.5 ${hasLiked ? 'text-red-500' : ''}`}
+                >
+                  <Heart className={`w-6 h-6 ${hasLiked ? 'fill-current' : ''}`} />
+                  <span className="text-sm font-medium">{likesCount}</span>
+                </button>
+              </div>
 
               {/* Title */}
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">
