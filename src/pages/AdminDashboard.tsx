@@ -109,7 +109,13 @@ const AdminDashboard = () => {
     email: "",
     password: "",
     full_name: "",
+    logo_url: "",
   });
+  const [selectedCompanyLogo, setSelectedCompanyLogo] = useState<File | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  
+  // Multiple images for giveaways
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [giveawayFormData, setGiveawayFormData] = useState({
     company_id: "",
     title: "",
@@ -296,10 +302,11 @@ const AdminDashboard = () => {
   };
 
   const handleCreateCompany = async (e: React.FormEvent) => {
-    // ... (handleCreateCompany logic remains the same)
     e.preventDefault();
 
     try {
+      setUploadingLogo(true);
+      
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -307,6 +314,15 @@ const AdminDashboard = () => {
       if (!session) {
         toast.error("You must be logged in");
         return;
+      }
+
+      // Upload company logo if selected
+      let logoUrl = companyFormData.logo_url;
+      if (selectedCompanyLogo) {
+        const uploadedUrl = await handleImageUpload(selectedCompanyLogo);
+        if (uploadedUrl) {
+          logoUrl = uploadedUrl;
+        }
       }
 
       const response = await fetch(
@@ -321,6 +337,7 @@ const AdminDashboard = () => {
             email: companyFormData.email,
             password: companyFormData.password,
             full_name: companyFormData.full_name,
+            logo_url: logoUrl,
           }),
         }
       );
@@ -333,13 +350,16 @@ const AdminDashboard = () => {
 
       toast.success("Company account created successfully!");
       setIsCompanyDialogOpen(false);
-      setCompanyFormData({ email: "", password: "", full_name: "" });
+      setCompanyFormData({ email: "", password: "", full_name: "", logo_url: "" });
+      setSelectedCompanyLogo(null);
       const companyProfiles = await fetchCompanies();
       fetchData();
       fetchGiveaways(companyProfiles);
     } catch (error: any) {
       toast.error(error.message || "Failed to create company account");
       console.error(error);
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -370,7 +390,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // UPDATED: Combined Create (Insert) and Update logic (U)
+  // UPDATED: Combined Create (Insert) and Update logic with multiple images
   const handleSaveGiveaway = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -384,12 +404,26 @@ const AdminDashboard = () => {
       setUploadingImage(true);
 
       let imageUrl = giveawayFormData.image_url;
+      const uploadedImageUrls: string[] = [];
 
-      // If a new file is selected, upload it
-      if (selectedImage) {
+      // If multiple files are selected, upload all of them
+      if (selectedImages.length > 0) {
+        for (const file of selectedImages) {
+          const uploadedUrl = await handleImageUpload(file);
+          if (uploadedUrl) {
+            uploadedImageUrls.push(uploadedUrl);
+          }
+        }
+        // Use first image as the main image_url
+        if (uploadedImageUrls.length > 0) {
+          imageUrl = uploadedImageUrls[0];
+        }
+      } else if (selectedImage) {
+        // Fallback to single image upload
         const uploadedUrl = await handleImageUpload(selectedImage);
         if (uploadedUrl) {
           imageUrl = uploadedUrl;
+          uploadedImageUrls.push(uploadedUrl);
         }
       }
 
@@ -404,6 +438,8 @@ const AdminDashboard = () => {
         end_date: giveawayFormData.end_date,
       };
 
+      let giveawayId: string;
+
       if (editingGiveaway) {
         // Update Giveaway (U)
         const { error } = await supabase
@@ -412,20 +448,47 @@ const AdminDashboard = () => {
           .eq("id", editingGiveaway.id);
 
         if (error) throw error;
+        giveawayId = editingGiveaway.id;
         toast.success(`Giveaway "${payload.title}" updated successfully!`);
       } else {
         // Create Giveaway (C)
-        const { error } = await supabase.from("giveaways").insert(payload);
+        const { data, error } = await supabase
+          .from("giveaways")
+          .insert(payload)
+          .select("id")
+          .single();
 
         if (error) throw error;
+        giveawayId = data.id;
         toast.success(`Giveaway "${payload.title}" created successfully!`);
       }
 
+      // Insert multiple images into giveaway_images table
+      if (uploadedImageUrls.length > 0) {
+        // If editing, delete existing images first
+        if (editingGiveaway) {
+          await supabase
+            .from("giveaway_images")
+            .delete()
+            .eq("giveaway_id", giveawayId);
+        }
+
+        // Insert new images
+        const imageInserts = uploadedImageUrls.map((url, index) => ({
+          giveaway_id: giveawayId,
+          image_url: url,
+          display_order: index,
+        }));
+
+        await supabase.from("giveaway_images").insert(imageInserts);
+      }
+
       setIsGiveawayDialogOpen(false);
-      resetGiveawayForm(); // Clear form and editing state
+      resetGiveawayForm();
+      setSelectedImages([]);
       const companyProfiles = await fetchCompanies();
       fetchData();
-      fetchGiveaways(companyProfiles); // Refresh giveaways list
+      fetchGiveaways(companyProfiles);
     } catch (error) {
       toast.error("Failed to save giveaway");
       console.error(error);
@@ -642,8 +705,31 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
-                  Create Company
+                <div className="space-y-2">
+                  <Label htmlFor="company_logo">Company Logo</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="company_logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedCompanyLogo(file);
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  {selectedCompanyLogo && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedCompanyLogo.name}
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={uploadingLogo}>
+                  {uploadingLogo ? "Creating..." : "Create Company"}
                 </Button>
               </form>
             </DialogContent>
@@ -742,20 +828,22 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="giveaway_image">Image</Label>
+                  <Label htmlFor="giveaway_images">Images (First image will be the cover)</Label>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <Input
-                        id="giveaway_image_file"
+                        id="giveaway_image_files"
                         type="file"
                         accept="image/*"
+                        multiple
                         onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setSelectedImage(file);
+                          const files = Array.from(e.target.files || []);
+                          if (files.length > 0) {
+                            setSelectedImages(files);
+                            setSelectedImage(null);
                             setGiveawayFormData({
                               ...giveawayFormData,
-                              image_url: "", // Clear URL if file is selected
+                              image_url: "",
                             });
                           }
                         }}
@@ -764,7 +852,7 @@ const AdminDashboard = () => {
                       <Upload className="w-4 h-4 text-muted-foreground" />
                     </div>
                     <div className="text-center text-sm text-muted-foreground">
-                      or
+                      or use a single URL
                     </div>
                     <Input
                       id="giveaway_image_url"
@@ -775,17 +863,28 @@ const AdminDashboard = () => {
                           ...giveawayFormData,
                           image_url: e.target.value,
                         });
-                        setSelectedImage(null); // Clear file if URL is entered
+                        setSelectedImages([]);
+                        setSelectedImage(null);
                       }}
                       placeholder="https://example.com/image.jpg"
                     />
                   </div>
-                  {selectedImage && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: {selectedImage.name}
-                    </p>
+                  {selectedImages.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Selected {selectedImages.length} image(s):
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedImages.map((file, index) => (
+                          <span key={index} className="text-xs bg-muted px-2 py-1 rounded">
+                            {index === 0 && <span className="text-primary font-medium">(Cover) </span>}
+                            {file.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )}
-                  {!selectedImage &&
+                  {!selectedImages.length && !selectedImage &&
                     giveawayFormData.image_url &&
                     editingGiveaway && (
                       <p className="text-sm text-muted-foreground">

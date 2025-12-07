@@ -1,13 +1,24 @@
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Gift } from "lucide-react";
+import { Calendar, Users, Gift, Heart } from "lucide-react";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+} from "@/components/ui/carousel";
 
 interface GiveawayCardProps {
   id: string;
   title: string;
   description: string;
   imageUrl?: string;
+  images?: string[];
   prizeValue?: number;
   endDate: string;
   entriesCount?: number;
@@ -20,16 +31,109 @@ export const GiveawayCard = ({
   title,
   description,
   imageUrl,
+  images = [],
   prizeValue,
   endDate,
   entriesCount = 0,
   hasJoined = false,
   onView,
 }: GiveawayCardProps) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [likesCount, setLikesCount] = useState(0);
+  const [hasLiked, setHasLiked] = useState(false);
+  const [likingInProgress, setLikingInProgress] = useState(false);
+
+  // Combine images array with fallback to single imageUrl
+  const allImages = images.length > 0 ? images : (imageUrl ? [imageUrl] : []);
+
+  useEffect(() => {
+    fetchLikes();
+  }, [id, user]);
+
+  const fetchLikes = async () => {
+    try {
+      const { count } = await supabase
+        .from("giveaway_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("giveaway_id", id);
+
+      setLikesCount(count || 0);
+
+      if (user) {
+        const { data } = await supabase
+          .from("giveaway_likes")
+          .select("id")
+          .eq("giveaway_id", id)
+          .eq("user_id", user.id)
+          .single();
+
+        setHasLiked(!!data);
+      }
+    } catch (error) {
+      console.error("Error fetching likes:", error);
+    }
+  };
+
+  const handleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.info("Please sign in to like this giveaway");
+      navigate("/auth");
+      return;
+    }
+
+    if (likingInProgress) return;
+
+    setLikingInProgress(true);
+    try {
+      if (hasLiked) {
+        const { error } = await supabase
+          .from("giveaway_likes")
+          .delete()
+          .eq("giveaway_id", id)
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+        setHasLiked(false);
+        setLikesCount((prev) => Math.max(0, prev - 1));
+      } else {
+        const { error } = await supabase
+          .from("giveaway_likes")
+          .insert({ user_id: user.id, giveaway_id: id });
+
+        if (error) {
+          if (error.code === "23505") {
+            setHasLiked(true);
+          } else {
+            throw error;
+          }
+        } else {
+          setHasLiked(true);
+          setLikesCount((prev) => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error);
+      toast.error("Failed to update like");
+    } finally {
+      setLikingInProgress(false);
+    }
+  };
+
+  const handleClick = () => {
+    if (onView) {
+      onView(id);
+    } else {
+      navigate(`/giveaway/${id}`);
+    }
+  };
+
   return (
     <div
       className="relative rounded-xl p-[1.5px] overflow-hidden group hover:shadow-glow transition-all duration-300 w-full cursor-pointer"
-      onClick={() => onView && onView(id)}
+      onClick={handleClick}
     >
       {/* Animated Border Layer */}
       <div
@@ -41,32 +145,57 @@ export const GiveawayCard = ({
 
       {/* Card Content */}
       <Card className="relative z-10 w-full h-full flex flex-col transition-all duration-300 overflow-hidden">
-        {/* Image Section */}
+        {/* Image Section with Carousel */}
         <div className="aspect-video w-full overflow-hidden bg-muted relative">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src =
-                  "https://placehold.co/400x225/A0A0A0/FFFFFF?text=Giveaway";
-              }}
-            />
+          {allImages.length > 0 ? (
+            <Carousel className="w-full h-full" opts={{ loop: true }}>
+              <CarouselContent className="h-full">
+                {allImages.map((img, index) => (
+                  <CarouselItem key={index} className="h-full">
+                    <img
+                      src={img}
+                      alt={`${title} - ${index + 1}`}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src =
+                          "https://placehold.co/400x225/A0A0A0/FFFFFF?text=Giveaway";
+                      }}
+                    />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted">
               <Gift className="w-12 h-12 text-muted-foreground/50" />
             </div>
           )}
 
+          {/* Image count indicator */}
+          {allImages.length > 1 && (
+            <div className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-medium z-10">
+              {allImages.length} photos
+            </div>
+          )}
+
           {/* Joined Badge */}
           {hasJoined && (
-            <Badge className="absolute top-3 right-3 bg-primary/90 text-primary-foreground">
+            <Badge className="absolute top-3 right-3 bg-primary/90 text-primary-foreground z-10">
               Joined
             </Badge>
           )}
+
+          {/* Like Button */}
+          <button
+            onClick={handleLike}
+            disabled={likingInProgress}
+            className={`absolute top-3 left-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1.5 rounded-full text-sm z-10 transition-colors hover:bg-background ${hasLiked ? 'text-red-500' : 'text-foreground'}`}
+          >
+            <Heart className={`w-4 h-4 ${hasLiked ? 'fill-current' : ''}`} />
+            <span className="font-medium">{likesCount}</span>
+          </button>
         </div>
 
         {/* Details Section */}

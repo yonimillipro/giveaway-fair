@@ -43,6 +43,67 @@ export type Database = {
           },
         ]
       }
+      giveaway_images: {
+        Row: {
+          created_at: string
+          display_order: number
+          giveaway_id: string
+          id: string
+          image_url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          giveaway_id: string
+          id?: string
+          image_url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          giveaway_id?: string
+          id?: string
+          image_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_images_giveaway_id_fkey"
+            columns: ["giveaway_id"]
+            isOneToOne: false
+            referencedRelation: "giveaways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      giveaway_likes: {
+        Row: {
+          created_at: string
+          giveaway_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          giveaway_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          giveaway_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_likes_giveaway_id_fkey"
+            columns: ["giveaway_id"]
+            isOneToOne: false
+            referencedRelation: "giveaways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       giveaways: {
         Row: {
           company_id: string
@@ -131,6 +192,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          logo_url: string | null
           updated_at: string
         }
         Insert: {
@@ -139,6 +201,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          logo_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -147,6 +210,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          logo_url?: string | null
           updated_at?: string
         }
         Relationships: []
