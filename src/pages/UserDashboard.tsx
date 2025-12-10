@@ -17,8 +17,11 @@ interface Giveaway {
   image_url: string | null;
   prize_value: number | null;
   end_date: string;
+  company_id: string;
   entries_count?: number;
   has_joined?: boolean;
+  company_logo?: string;
+  company_name?: string;
 }
 
 const UserDashboard = () => {
@@ -64,10 +67,19 @@ const UserDashboard = () => {
             .eq("user_id", user?.id)
             .single();
 
+          // Fetch company profile for logo
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("logo_url, full_name")
+            .eq("id", giveaway.company_id)
+            .single();
+
           return {
             ...giveaway,
             entries_count: count || 0,
             has_joined: !!entryData,
+            company_logo: profileData?.logo_url || undefined,
+            company_name: profileData?.full_name || undefined,
           };
         })
       );
@@ -253,6 +265,8 @@ const UserDashboard = () => {
                     endDate={giveaway.end_date}
                     entriesCount={giveaway.entries_count}
                     hasJoined={giveaway.has_joined}
+                    companyLogo={giveaway.company_logo}
+                    companyName={giveaway.company_name}
                     onView={handleGiveawayView}
                   />
                 ))}

@@ -224,6 +224,15 @@ export const GiveawayCard = ({
 
           {/* Info Row */}
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground pt-2 border-t border-border/50">
+            {/* Company Logo - Left */}
+            <Avatar className="h-9 w-9 border-2 border-border">
+              <AvatarImage src={companyLogo} alt={companyName || "Company"} />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                <Building2 className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            
+            {/* Date and Entries - Right */}
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-destructive" />
@@ -236,14 +245,6 @@ export const GiveawayCard = ({
                 <span>{entriesCount} entries</span>
               </div>
             </div>
-            
-            {/* Company Logo */}
-            <Avatar className="h-7 w-7 border border-border">
-              <AvatarImage src={companyLogo} alt={companyName || "Company"} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
-                <Building2 className="h-3.5 w-3.5" />
-              </AvatarFallback>
-            </Avatar>
           </div>
         </div>
       </Card>
