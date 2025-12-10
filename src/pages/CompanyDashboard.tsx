@@ -48,6 +48,8 @@ interface Giveaway {
   end_date: string;
   status: string;
   entries_count?: number;
+  company_logo?: string;
+  company_name?: string;
 }
 
 interface Product {
@@ -66,6 +68,7 @@ const CompanyDashboard = () => {
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [companyProfile, setCompanyProfile] = useState<{ logo_url?: string; full_name?: string } | null>(null);
   const [newGiveaway, setNewGiveaway] = useState({
     title: "",
     description: "",
@@ -82,10 +85,21 @@ const CompanyDashboard = () => {
 
   useEffect(() => {
     if (user) {
+      fetchCompanyProfile();
       fetchGiveaways();
       fetchProducts();
     }
   }, [user]);
+
+  const fetchCompanyProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("logo_url, full_name")
+      .eq("id", user.id)
+      .single();
+    setCompanyProfile(data);
+  };
 
   const fetchGiveaways = async () => {
     try {
@@ -101,6 +115,8 @@ const CompanyDashboard = () => {
         const processedData = data.map((g) => ({
           ...g,
           entries_count: g.entries_count[0]?.count || 0,
+          company_logo: companyProfile?.logo_url,
+          company_name: companyProfile?.full_name,
         }));
         setGiveaways(processedData);
       }
@@ -456,9 +472,8 @@ const CompanyDashboard = () => {
                   // Applying the responsive grid: 2 columns on small screens, 3 on large screens
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
                     {giveaways.map((giveaway) => (
-                      <div>
+                      <div key={giveaway.id}>
                         <GiveawayCard
-                          key={giveaway.id}
                           id={giveaway.id}
                           title={giveaway.title}
                           description={giveaway.description}
@@ -466,7 +481,9 @@ const CompanyDashboard = () => {
                           prizeValue={giveaway.prize_value || undefined}
                           endDate={giveaway.end_date}
                           entriesCount={giveaway.entries_count}
-                          onView={handleGiveawayView} // Added onView handler
+                          companyLogo={giveaway.company_logo}
+                          companyName={giveaway.company_name}
+                          onView={handleGiveawayView}
                         />
                         <Button
                           variant="destructive"
