@@ -14,6 +14,7 @@ import CompanyDashboard from "./pages/CompanyDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Promotions from "./pages/Promotions";
 import GiveawayDetail from "./pages/GiveawayDetail";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,14 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/promotions" element={<Promotions />} />
               <Route path="/giveaway/:id" element={<GiveawayDetail />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute allowedRoles={["user", "company", "admin"]}>
+                    <Profile />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/dashboard"
                 element={

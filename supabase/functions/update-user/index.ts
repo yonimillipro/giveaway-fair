@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     // Get update data from request
-    const { user_id, full_name, role } = await req.json()
+    const { user_id, full_name, role, logo_url } = await req.json()
 
     if (!user_id) {
       return new Response(
@@ -62,13 +62,17 @@ serve(async (req) => {
       )
     }
 
-    console.log('Updating user:', user_id, { full_name, role })
+    console.log('Updating user:', user_id, { full_name, role, logo_url })
 
-    // Update profile if full_name is provided
-    if (full_name !== undefined) {
+    // Update profile if full_name or logo_url is provided
+    if (full_name !== undefined || logo_url !== undefined) {
+      const updateData: any = {}
+      if (full_name !== undefined) updateData.full_name = full_name
+      if (logo_url !== undefined) updateData.logo_url = logo_url
+
       const { error: profileError } = await supabaseClient
         .from('profiles')
-        .update({ full_name })
+        .update(updateData)
         .eq('id', user_id)
 
       if (profileError) {

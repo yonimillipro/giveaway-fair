@@ -103,7 +103,10 @@ const AdminDashboard = () => {
   const [userFormData, setUserFormData] = useState({
     full_name: "",
     role: "",
+    logo_url: "",
   });
+  const [selectedUserLogo, setSelectedUserLogo] = useState<File | null>(null);
+  const [uploadingUserLogo, setUploadingUserLogo] = useState(false);
 
   const [companyFormData, setCompanyFormData] = useState({
     email: "",
@@ -571,12 +574,22 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = async (user: User) => {
     setEditingUser(user);
+    
+    // Fetch current logo_url for the user
+    const { data: profileData } = await supabase
+      .from("profiles")
+      .select("logo_url")
+      .eq("id", user.id)
+      .single();
+    
     setUserFormData({
       full_name: user.full_name || "",
       role: user.role,
+      logo_url: profileData?.logo_url || "",
     });
+    setSelectedUserLogo(null);
     setIsUserDialogOpen(true);
   };
 
@@ -584,11 +597,33 @@ const AdminDashboard = () => {
     e.preventDefault();
     if (!editingUser) return;
 
+    setUploadingUserLogo(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast.error("You must be logged in");
         return;
+      }
+
+      let logoUrl = userFormData.logo_url;
+
+      // Upload new logo if selected
+      if (selectedUserLogo) {
+        const fileExt = selectedUserLogo.name.split(".").pop();
+        const fileName = `company-logo-${editingUser.id}-${Date.now()}.${fileExt}`;
+        const filePath = `logos/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("giveaway-images")
+          .upload(filePath, selectedUserLogo);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("giveaway-images")
+          .getPublicUrl(filePath);
+
+        logoUrl = publicUrl;
       }
 
       const response = await fetch(
@@ -603,6 +638,7 @@ const AdminDashboard = () => {
             user_id: editingUser.id,
             full_name: userFormData.full_name,
             role: userFormData.role,
+            logo_url: logoUrl,
           }),
         }
       );
@@ -616,12 +652,15 @@ const AdminDashboard = () => {
       toast.success("User updated successfully!");
       setIsUserDialogOpen(false);
       setEditingUser(null);
+      setSelectedUserLogo(null);
       const companyProfiles = await fetchCompanies();
       fetchData();
       fetchGiveaways(companyProfiles);
     } catch (error: any) {
       console.error("Error updating user:", error);
       toast.error(error.message || "Failed to update user");
+    } finally {
+      setUploadingUserLogo(false);
     }
   };
 
@@ -1187,9 +1226,40 @@ const AdminDashboard = () => {
                   <p className="text-xs text-muted-foreground">Admin roles cannot be changed</p>
                 )}
               </div>
-              <Button type="submit" className="w-full">
+              {/* Company Logo - Only show for company role */}
+              {(userFormData.role === "company" || editingUser?.role === "company") && (
+                <div className="space-y-2">
+                  <Label htmlFor="user_logo">Company Logo</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="user_logo"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setSelectedUserLogo(file);
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  {selectedUserLogo && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedUserLogo.name}
+                    </p>
+                  )}
+                  {!selectedUserLogo && userFormData.logo_url && (
+                    <p className="text-sm text-muted-foreground">
+                      Current logo: {userFormData.logo_url.substring(0, 40)}...
+                    </p>
+                  )}
+                </div>
+              )}
+              <Button type="submit" className="w-full" disabled={uploadingUserLogo}>
                 <Save className="w-4 h-4 mr-2" />
-                Save Changes
+                {uploadingUserLogo ? "Saving..." : "Save Changes"}
               </Button>
             </form>
           </DialogContent>
