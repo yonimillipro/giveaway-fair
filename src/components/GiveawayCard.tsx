@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Gift, Heart } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Calendar, Users, Gift, Heart, Building2 } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +24,8 @@ interface GiveawayCardProps {
   endDate: string;
   entriesCount?: number;
   hasJoined?: boolean;
+  companyLogo?: string;
+  companyName?: string;
   onView?: (id: string) => void;
 }
 
@@ -36,6 +39,8 @@ export const GiveawayCard = ({
   endDate,
   entriesCount = 0,
   hasJoined = false,
+  companyLogo,
+  companyName,
   onView,
 }: GiveawayCardProps) => {
   const navigate = useNavigate();
@@ -218,17 +223,27 @@ export const GiveawayCard = ({
           </p>
 
           {/* Info Row */}
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground pt-2 border-t border-border/50">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-destructive" />
-              <span className="font-medium text-destructive">
-                {format(new Date(endDate), "MMM dd")}
-              </span>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs sm:text-sm text-muted-foreground pt-2 border-t border-border/50">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-destructive" />
+                <span className="font-medium text-destructive">
+                  {format(new Date(endDate), "MMM dd")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" />
+                <span>{entriesCount} entries</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" />
-              <span>{entriesCount} entries</span>
-            </div>
+            
+            {/* Company Logo */}
+            <Avatar className="h-7 w-7 border border-border">
+              <AvatarImage src={companyLogo} alt={companyName || "Company"} />
+              <AvatarFallback className="bg-muted text-muted-foreground text-xs">
+                <Building2 className="h-3.5 w-3.5" />
+              </AvatarFallback>
+            </Avatar>
           </div>
         </div>
       </Card>
