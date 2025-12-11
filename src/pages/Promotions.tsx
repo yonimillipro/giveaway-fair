@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -32,11 +32,7 @@ const Promotions = () => {
   const [promotions, setPromotions] = useState<PromotionWithProducts[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchPromotions();
-  }, []);
-
-  const fetchPromotions = async () => {
+  const fetchPromotions = useCallback(async () => {
     try {
       const { data: promotionsData, error } = await supabase
         .from('promotions')
@@ -45,6 +41,16 @@ const Promotions = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      interface PromotionProduct {
+        product_id: string;
+        products: {
+          id: string;
+          name: string;
+          price: number;
+          image_url: string | null;
+        } | null;
+      }
 
       // Fetch products for each promotion
       const promotionsWithProducts = await Promise.all(
@@ -64,7 +70,12 @@ const Promotions = () => {
 
           return {
             ...promo,
-            products: (promoProducts || []).map((pp: any) => pp.products).filter(Boolean),
+            products: (promoProducts || []).map((pp: PromotionProduct) => pp.products).filter(Boolean) as Array<{
+              id: string;
+              name: string;
+              price: number;
+              image_url: string | null;
+            }>,
           };
         })
       );
@@ -75,7 +86,11 @@ const Promotions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPromotions();
+  }, [fetchPromotions]);
 
   const calculateDiscountedPrice = (price: number, discount: number) => {
     return (price * (1 - discount / 100)).toFixed(2);

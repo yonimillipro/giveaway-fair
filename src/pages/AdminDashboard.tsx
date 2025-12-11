@@ -195,7 +195,14 @@ const AdminDashboard = () => {
 
       const roleMap = new Map(roles?.map((r) => [r.user_id, r.role]) || []);
 
-      const usersData = (profiles || []).map((profile: any) => ({
+      interface ProfileData {
+        id: string;
+        email: string;
+        full_name: string | null;
+        created_at: string;
+      }
+
+      const usersData = (profiles || []).map((profile: ProfileData) => ({
         id: profile.id,
         email: profile.email,
         full_name: profile.full_name || "N/A",
@@ -358,8 +365,8 @@ const AdminDashboard = () => {
       const companyProfiles = await fetchCompanies();
       fetchData();
       fetchGiveaways(companyProfiles);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to create company account");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to create company account");
       console.error(error);
     } finally {
       setUploadingLogo(false);
@@ -568,9 +575,9 @@ const AdminDashboard = () => {
       const companyProfiles = await fetchCompanies();
       fetchData();
       fetchGiveaways(companyProfiles);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error deleting user:", error);
-      toast.error(error.message || "Failed to delete user");
+      toast.error(error instanceof Error ? error.message : "Failed to delete user");
     }
   };
 
@@ -656,9 +663,9 @@ const AdminDashboard = () => {
       const companyProfiles = await fetchCompanies();
       fetchData();
       fetchGiveaways(companyProfiles);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating user:", error);
-      toast.error(error.message || "Failed to update user");
+      toast.error(error instanceof Error ? error.message : "Failed to update user");
     } finally {
       setUploadingUserLogo(false);
     }
