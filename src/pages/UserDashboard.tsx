@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -31,19 +31,7 @@ const UserDashboard = () => {
   const [myEntries, setMyEntries] = useState<Giveaway[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchGiveaways();
-      fetchMyEntries();
-    } else {
-      // Clear state when user logs out or is undefined
-      setGiveaways([]);
-      setMyEntries([]);
-      setLoading(false);
-    }
-  }, [user]);
-
-  const fetchGiveaways = async () => {
+  const fetchGiveaways = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("giveaways")
@@ -90,9 +78,9 @@ const UserDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  const fetchMyEntries = async () => {
+  const fetchMyEntries = useCallback(async () => {
     if (!user) return;
     try {
       const { data, error } = await supabase
@@ -114,17 +102,47 @@ const UserDashboard = () => {
       if (error) {
         console.error("Error fetching my entries:", error);
       } else {
-        const entries =
-          (data || []).map((entry: any) => ({
-            ...entry.giveaways,
+        interface GiveawayEntry {
+          giveaways: {
+            id: string;
+            title: string;
+            description: string;
+            image_url: string | null;
+            prize_value: number | null;
+            end_date: string;
+            company_id?: string;
+          } | null;
+        }
+        const entries: Giveaway[] = (data || [])
+          .filter((entry: GiveawayEntry) => entry.giveaways !== null)
+          .map((entry: GiveawayEntry) => ({
+            id: entry.giveaways!.id,
+            title: entry.giveaways!.title,
+            description: entry.giveaways!.description,
+            image_url: entry.giveaways!.image_url,
+            prize_value: entry.giveaways!.prize_value,
+            end_date: entry.giveaways!.end_date,
+            company_id: entry.giveaways!.company_id || "",
             has_joined: true,
-          })) ?? [];
+          }));
         setMyEntries(entries);
       }
     } catch (error) {
       console.error("An unexpected error occurred:", error);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      fetchGiveaways();
+      fetchMyEntries();
+    } else {
+      // Clear state when user logs out or is undefined
+      setGiveaways([]);
+      setMyEntries([]);
+      setLoading(false);
+    }
+  }, [user, fetchGiveaways, fetchMyEntries]);
 
   const handleJoinGiveaway = async (giveawayId: string) => {
     if (!user) {
@@ -139,7 +157,7 @@ const UserDashboard = () => {
         .insert({ user_id: user.id, giveaway_id: giveawayId });
 
       if (error) {
-        if ((error as any).code === "23505") {
+        if (error.code === "23505") {
           toast.info("You have already joined this giveaway.");
         } else {
           toast.error("Failed to join giveaway. Please try again.");
