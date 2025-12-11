@@ -43,7 +43,10 @@ import {
   Pencil,
   Trash2,
   Save,
+  Percent,
+  Package,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -79,6 +82,25 @@ interface Stats {
   totalCompanies: number;
   totalGiveaways: number;
   totalWinners: number;
+  totalPromotions: number;
+}
+
+interface Promotion {
+  id: string;
+  name: string;
+  description: string | null;
+  discount_percentage: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+  created_at: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  company_id: string;
+  price: number;
 }
 
 const AdminDashboard = () => {
@@ -86,11 +108,14 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<CompanyUser[]>([]);
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalCompanies: 0,
     totalGiveaways: 0,
     totalWinners: 0,
+    totalPromotions: 0,
   });
   const [loading, setLoading] = useState(true);
   const [isCompanyDialogOpen, setIsCompanyDialogOpen] = useState(false);
@@ -130,6 +155,18 @@ const AdminDashboard = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Promotion state
+  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
+  const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [promotionFormData, setPromotionFormData] = useState({
+    name: "",
+    description: "",
+    discount_percentage: "",
+    start_date: "",
+    end_date: "",
+  });
+
   const resetGiveawayForm = () => {
     setGiveawayFormData({
       company_id: "",
@@ -143,12 +180,25 @@ const AdminDashboard = () => {
     setEditingGiveaway(null);
   };
 
+  const resetPromotionForm = () => {
+    setPromotionFormData({
+      name: "",
+      description: "",
+      discount_percentage: "",
+      start_date: "",
+      end_date: "",
+    });
+    setSelectedProductIds([]);
+    setEditingPromotion(null);
+  };
+
   useEffect(() => {
     const loadData = async () => {
-      // 1. Fetch companies first, as it's a dependency for fetching giveaways
       const companyProfiles = await fetchCompanies();
       await fetchData();
       await fetchGiveaways(companyProfiles);
+      await fetchPromotions();
+      await fetchProducts();
       setLoading(false);
     };
     loadData();
@@ -176,6 +226,45 @@ const AdminDashboard = () => {
       resetGiveawayForm();
     }
   }, [editingGiveaway]);
+
+  // Sync state with form when editingPromotion changes
+  useEffect(() => {
+    if (editingPromotion) {
+      const formattedStartDate = format(
+        new Date(editingPromotion.start_date),
+        "yyyy-MM-dd'T'HH:mm"
+      );
+      const formattedEndDate = format(
+        new Date(editingPromotion.end_date),
+        "yyyy-MM-dd'T'HH:mm"
+      );
+
+      setPromotionFormData({
+        name: editingPromotion.name,
+        description: editingPromotion.description || "",
+        discount_percentage: editingPromotion.discount_percentage.toString(),
+        start_date: formattedStartDate,
+        end_date: formattedEndDate,
+      });
+
+      // Fetch linked products for this promotion
+      fetchPromotionProducts(editingPromotion.id);
+      setIsPromotionDialogOpen(true);
+    } else {
+      resetPromotionForm();
+    }
+  }, [editingPromotion]);
+
+  const fetchPromotionProducts = async (promotionId: string) => {
+    const { data } = await supabase
+      .from("promotion_products")
+      .select("product_id")
+      .eq("promotion_id", promotionId);
+    
+    if (data) {
+      setSelectedProductIds(data.map(p => p.product_id));
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -308,6 +397,42 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error fetching giveaways:", error);
       toast.error("Failed to load giveaways");
+    }
+  };
+
+  const fetchPromotions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("promotions")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      setPromotions(data || []);
+      setStats((prev) => ({
+        ...prev,
+        totalPromotions: data?.length || 0,
+      }));
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+      toast.error("Failed to load promotions");
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, company_id, price")
+        .eq("status", "active")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+
+      setProducts(data || []);
+    } catch (error) {
+      console.error("Error fetching products:", error);
     }
   };
 
@@ -671,6 +796,121 @@ const AdminDashboard = () => {
     }
   };
 
+  // Promotion handlers
+  const handleSavePromotion = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!promotionFormData.name || !promotionFormData.discount_percentage || !promotionFormData.start_date || !promotionFormData.end_date) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error("You must be logged in");
+        return;
+      }
+
+      const payload = {
+        name: promotionFormData.name,
+        description: promotionFormData.description || null,
+        discount_percentage: parseFloat(promotionFormData.discount_percentage),
+        start_date: promotionFormData.start_date,
+        end_date: promotionFormData.end_date,
+        created_by: user.id,
+        status: "active",
+      };
+
+      let promotionId: string;
+
+      if (editingPromotion) {
+        const { error } = await supabase
+          .from("promotions")
+          .update(payload)
+          .eq("id", editingPromotion.id);
+
+        if (error) throw error;
+        promotionId = editingPromotion.id;
+        toast.success(`Promotion "${payload.name}" updated successfully!`);
+      } else {
+        const { data, error } = await supabase
+          .from("promotions")
+          .insert(payload)
+          .select("id")
+          .single();
+
+        if (error) throw error;
+        promotionId = data.id;
+        toast.success(`Promotion "${payload.name}" created successfully!`);
+      }
+
+      // Update linked products
+      // First delete existing links
+      await supabase
+        .from("promotion_products")
+        .delete()
+        .eq("promotion_id", promotionId);
+
+      // Then add new links
+      if (selectedProductIds.length > 0) {
+        const productLinks = selectedProductIds.map(productId => ({
+          promotion_id: promotionId,
+          product_id: productId,
+        }));
+
+        await supabase.from("promotion_products").insert(productLinks);
+      }
+
+      setIsPromotionDialogOpen(false);
+      resetPromotionForm();
+      fetchPromotions();
+    } catch (error) {
+      console.error("Error saving promotion:", error);
+      toast.error("Failed to save promotion");
+    }
+  };
+
+  const handleDeletePromotion = async (promotionId: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete the promotion: "${name}"?`)) return;
+
+    try {
+      // Delete linked products first
+      await supabase
+        .from("promotion_products")
+        .delete()
+        .eq("promotion_id", promotionId);
+
+      const { error } = await supabase
+        .from("promotions")
+        .delete()
+        .eq("id", promotionId);
+
+      if (error) throw error;
+
+      toast.success(`Promotion "${name}" deleted successfully!`);
+      fetchPromotions();
+    } catch (error) {
+      console.error("Error deleting promotion:", error);
+      toast.error("Failed to delete promotion");
+    }
+  };
+
+  const handleEditPromotion = (promotion: Promotion) => {
+    setEditingPromotion(promotion);
+  };
+
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -984,10 +1224,153 @@ const AdminDashboard = () => {
               </form>
             </DialogContent>
           </Dialog>
+
+          {/* Create Promotion Button */}
+          <Dialog
+            open={isPromotionDialogOpen}
+            onOpenChange={(open) => {
+              setIsPromotionDialogOpen(open);
+              if (!open) {
+                resetPromotionForm();
+              }
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                onClick={() => setEditingPromotion(null)}
+              >
+                <Percent className="w-4 h-4 mr-2" />
+                Create Promotion
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingPromotion ? "Edit Promotion" : "Create New Promotion"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSavePromotion} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="promotion_name">Name *</Label>
+                  <Input
+                    id="promotion_name"
+                    value={promotionFormData.name}
+                    onChange={(e) =>
+                      setPromotionFormData({
+                        ...promotionFormData,
+                        name: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="promotion_description">Description</Label>
+                  <Textarea
+                    id="promotion_description"
+                    value={promotionFormData.description}
+                    onChange={(e) =>
+                      setPromotionFormData({
+                        ...promotionFormData,
+                        description: e.target.value,
+                      })
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="promotion_discount">Discount Percentage *</Label>
+                  <Input
+                    id="promotion_discount"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={promotionFormData.discount_percentage}
+                    onChange={(e) =>
+                      setPromotionFormData({
+                        ...promotionFormData,
+                        discount_percentage: e.target.value,
+                      })
+                    }
+                    placeholder="10"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="promotion_start">Start Date *</Label>
+                    <Input
+                      id="promotion_start"
+                      type="datetime-local"
+                      value={promotionFormData.start_date}
+                      onChange={(e) =>
+                        setPromotionFormData({
+                          ...promotionFormData,
+                          start_date: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="promotion_end">End Date *</Label>
+                    <Input
+                      id="promotion_end"
+                      type="datetime-local"
+                      value={promotionFormData.end_date}
+                      onChange={(e) =>
+                        setPromotionFormData({
+                          ...promotionFormData,
+                          end_date: e.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Link Products (Optional)</Label>
+                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                    {products.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No products available. Companies need to create products first.
+                      </p>
+                    ) : (
+                      products.map((product) => (
+                        <div key={product.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`product-${product.id}`}
+                            checked={selectedProductIds.includes(product.id)}
+                            onCheckedChange={() => toggleProductSelection(product.id)}
+                          />
+                          <label
+                            htmlFor={`product-${product.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                          >
+                            {product.name} - ${product.price.toFixed(2)}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  {selectedProductIds.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {selectedProductIds.length} product(s) selected
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full">
+                  {editingPromotion ? "Save Changes" : "Create Promotion"}
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        {/* Stats Cards ... (remains the same) ... */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -1031,6 +1414,18 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalWinners}</div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Total Promotions
+              </CardTitle>
+              <Percent className="w-4 h-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalPromotions}</div>
             </CardContent>
           </Card>
         </div>
@@ -1109,6 +1504,92 @@ const AdminDashboard = () => {
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        {/* -------------------------------------------------------------------------- */}
+
+        {/* Promotions Table */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>All Promotions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <p className="text-center text-muted-foreground py-4">
+                Loading promotions...
+              </p>
+            ) : promotions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                No promotions found. Click "Create Promotion" to add one.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Discount</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {promotions.map((promotion) => {
+                      const now = new Date();
+                      const startDate = new Date(promotion.start_date);
+                      const endDate = new Date(promotion.end_date);
+                      const isActive = now >= startDate && now <= endDate && promotion.status === "active";
+                      
+                      return (
+                        <TableRow key={promotion.id}>
+                          <TableCell className="font-medium">
+                            {promotion.name}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {promotion.discount_percentage}% OFF
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(promotion.start_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(promotion.end_date).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={isActive ? "default" : "outline"}>
+                              {isActive ? "Active" : now < startDate ? "Upcoming" : "Ended"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditPromotion(promotion)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() =>
+                                  handleDeletePromotion(promotion.id, promotion.name)
+                                }
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
