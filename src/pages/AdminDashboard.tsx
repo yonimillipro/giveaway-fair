@@ -914,31 +914,31 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-            <div className="flex items-center gap-2">
+            <h1 className="text-lg sm:text-2xl font-bold">Admin Dashboard</h1>
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <ThemeToggle />
-              <Button variant="outline" onClick={signOut}>
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+              <Button variant="outline" size="sm" onClick={signOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
+                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sign Out</span>
               </Button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         {/* Action Buttons */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-8">
           <Dialog
             open={isCompanyDialogOpen}
             onOpenChange={setIsCompanyDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Create Company Account
+              <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-4">
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Create</span> Company
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -1033,10 +1033,12 @@ const AdminDashboard = () => {
             <DialogTrigger asChild>
               <Button
                 variant="secondary"
+                size="sm"
+                className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-4"
                 onClick={() => setEditingGiveaway(null)}
               >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Giveaway
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Giveaway
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1238,10 +1240,12 @@ const AdminDashboard = () => {
             <DialogTrigger asChild>
               <Button
                 variant="outline"
+                size="sm"
+                className="h-8 sm:h-9 text-xs sm:text-sm px-2 sm:px-4"
                 onClick={() => setEditingPromotion(null)}
               >
-                <Percent className="w-4 h-4 mr-2" />
-                Create Promotion
+                <Percent className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                Promotion
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -1370,79 +1374,71 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-              <Users className="w-4 h-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Users</CardTitle>
+              <Users className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
+            <CardContent className="p-2.5 sm:p-4 pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalUsers}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Companies
-              </CardTitle>
-              <Building2 className="w-4 h-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Companies</CardTitle>
+              <Building2 className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalCompanies}</div>
+            <CardContent className="p-2.5 sm:p-4 pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalCompanies}</div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Giveaways
-              </CardTitle>
-              <Gift className="w-4 h-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Giveaways</CardTitle>
+              <Gift className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalGiveaways}</div>
+            <CardContent className="p-2.5 sm:p-4 pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalGiveaways}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Winners
-              </CardTitle>
-              <Trophy className="w-4 h-4 text-muted-foreground" />
+          <Card className="hidden lg:block">
+            <CardHeader className="flex flex-row items-center justify-between p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Winners</CardTitle>
+              <Trophy className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalWinners}</div>
+            <CardContent className="p-2.5 sm:p-4 pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalWinners}</div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Promotions
-              </CardTitle>
-              <Percent className="w-4 h-4 text-muted-foreground" />
+          <Card className="hidden lg:block">
+            <CardHeader className="flex flex-row items-center justify-between p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">Promotions</CardTitle>
+              <Percent className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPromotions}</div>
+            <CardContent className="p-2.5 sm:p-4 pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{stats.totalPromotions}</div>
             </CardContent>
           </Card>
         </div>
         {/* -------------------------------------------------------------------------- */}
 
         {/* Giveaways Table (CRUD - R, U, D) */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>All Giveaways</CardTitle>
+        <Card className="mb-4 sm:mb-8">
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-sm sm:text-lg">All Giveaways</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
             {loading ? (
-              <p className="text-center text-muted-foreground py-4">
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
                 Loading giveaways...
               </p>
             ) : giveaways.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
                 No giveaways found.
               </p>
             ) : (
@@ -1450,47 +1446,48 @@ const AdminDashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Company</TableHead>
-                      <TableHead>Entries</TableHead>
-                      <TableHead>Prize Value</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Title</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden sm:table-cell">Company</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Entries</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden md:table-cell">Prize</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">End</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden lg:table-cell">Created</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {giveaways.map((giveaway) => (
                       <TableRow key={giveaway.id}>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium text-[10px] sm:text-sm max-w-[80px] sm:max-w-none truncate">
                           {giveaway.title}
                         </TableCell>
-                        <TableCell>{giveaway.company_name}</TableCell>
-                        <TableCell>{giveaway.entries_count}</TableCell>
-                        <TableCell>
+                        <TableCell className="text-[10px] sm:text-sm hidden sm:table-cell">{giveaway.company_name}</TableCell>
+                        <TableCell className="text-[10px] sm:text-sm">{giveaway.entries_count}</TableCell>
+                        <TableCell className="text-[10px] sm:text-sm hidden md:table-cell">
                           {giveaway.prize_value
-                            ? `$${giveaway.prize_value.toFixed(2)}`
+                            ? `$${giveaway.prize_value.toFixed(0)}`
                             : "N/A"}
                         </TableCell>
-                        <TableCell>
-                          {new Date(giveaway.end_date).toLocaleDateString()}
+                        <TableCell className="text-[10px] sm:text-sm">
+                          {format(new Date(giveaway.end_date), "MM/dd")}
                         </TableCell>
-                        <TableCell>
-                          {new Date(giveaway.created_at).toLocaleDateString()}
+                        <TableCell className="text-[10px] sm:text-sm hidden lg:table-cell">
+                          {format(new Date(giveaway.created_at), "MM/dd")}
                         </TableCell>
-                        {/* UPDATED Actions Cell */}
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-1 sm:gap-2">
                             <Button
                               variant="outline"
                               size="sm"
+                              className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                               onClick={() => handleEditGiveaway(giveaway)}
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                             <Button
                               variant="destructive"
                               size="sm"
+                              className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                               onClick={() =>
                                 handleDeleteGiveaway(
                                   giveaway.id,
@@ -1498,7 +1495,7 @@ const AdminDashboard = () => {
                                 )
                               }
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1513,30 +1510,30 @@ const AdminDashboard = () => {
         {/* -------------------------------------------------------------------------- */}
 
         {/* Promotions Table */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>All Promotions</CardTitle>
+        <Card className="mb-4 sm:mb-8">
+          <CardHeader className="p-3 sm:p-6">
+            <CardTitle className="text-sm sm:text-lg">All Promotions</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
             {loading ? (
-              <p className="text-center text-muted-foreground py-4">
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
                 Loading promotions...
               </p>
             ) : promotions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">
-                No promotions found. Click "Create Promotion" to add one.
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
+                No promotions found. Click "Promotion" to add one.
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Discount</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>End Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Name</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Discount</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden sm:table-cell">Start</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">End</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Status</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1548,42 +1545,44 @@ const AdminDashboard = () => {
                       
                       return (
                         <TableRow key={promotion.id}>
-                          <TableCell className="font-medium">
+                          <TableCell className="font-medium text-[10px] sm:text-sm max-w-[60px] sm:max-w-none truncate">
                             {promotion.name}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary">
-                              {promotion.discount_percentage}% OFF
+                            <Badge variant="secondary" className="text-[9px] sm:text-xs px-1 sm:px-2">
+                              {promotion.discount_percentage}%
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            {new Date(promotion.start_date).toLocaleDateString()}
+                          <TableCell className="text-[10px] sm:text-sm hidden sm:table-cell">
+                            {format(new Date(promotion.start_date), "MM/dd")}
+                          </TableCell>
+                          <TableCell className="text-[10px] sm:text-sm">
+                            {format(new Date(promotion.end_date), "MM/dd")}
                           </TableCell>
                           <TableCell>
-                            {new Date(promotion.end_date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={isActive ? "default" : "outline"}>
-                              {isActive ? "Active" : now < startDate ? "Upcoming" : "Ended"}
+                            <Badge variant={isActive ? "default" : "outline"} className="text-[9px] sm:text-xs px-1 sm:px-2">
+                              {isActive ? "Active" : now < startDate ? "Soon" : "End"}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-1 sm:gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
+                                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                                 onClick={() => handleEditPromotion(promotion)}
                               >
-                                <Pencil className="w-4 h-4" />
+                                <Pencil className="w-3 h-3 sm:w-4 sm:h-4" />
                               </Button>
                               <Button
                                 variant="destructive"
                                 size="sm"
+                                className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                                 onClick={() =>
                                   handleDeletePromotion(promotion.id, promotion.name)
                                 }
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                               </Button>
                             </div>
                           </TableCell>
