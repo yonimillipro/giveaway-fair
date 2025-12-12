@@ -289,89 +289,90 @@ const CompanyDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+          <h1 className="text-lg sm:text-2xl font-bold text-primary">
             Company Dashboard
           </h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground hidden sm:inline">
               {user?.email}
             </span>
             <ThemeToggle />
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs sm:text-sm px-2 sm:px-3">
+              <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8 max-w-7xl">
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
           <Card className="shadow-lg border-indigo-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
                 Active Giveaways
               </CardTitle>
-              <Gift className="h-4 w-4 text-indigo-500" />
+              <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeGiveaways}</div>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{activeGiveaways}</div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground hidden sm:block">
                 Total active campaigns
               </p>
             </CardContent>
           </Card>
           <Card className="shadow-lg border-indigo-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
                 Total Entries
               </CardTitle>
-              <Users className="h-4 w-4 text-indigo-500" />
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalEntries}</div>
-              <p className="text-xs text-muted-foreground">
+            <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{totalEntries}</div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground hidden sm:block">
                 Entries across all giveaways
               </p>
             </CardContent>
           </Card>
           <Card className="shadow-lg border-indigo-200">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Products Offered
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
+                Products
               </CardTitle>
-              <Package className="h-4 w-4 text-indigo-500" />
+              <Package className="h-3 w-3 sm:h-4 sm:w-4 text-indigo-500" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{products.length}</div>
-              <p className="text-xs text-muted-foreground">
-                Items available for prizes
+            <CardContent className="p-2 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{products.length}</div>
+              <p className="text-[8px] sm:text-xs text-muted-foreground hidden sm:block">
+                Items for prizes
               </p>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="giveaways" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:max-w-md">
-            <TabsTrigger value="giveaways">
+          <TabsList className="grid w-full grid-cols-2 md:max-w-md h-8 sm:h-10">
+            <TabsTrigger value="giveaways" className="text-xs sm:text-sm">
               Giveaways ({giveaways.length})
             </TabsTrigger>
-            <TabsTrigger value="products">
+            <TabsTrigger value="products" className="text-xs sm:text-sm">
               Products ({products.length})
             </TabsTrigger>
           </TabsList>
 
           {/* Giveaways Tab */}
-          <TabsContent value="giveaways" className="space-y-6 mt-6">
+          <TabsContent value="giveaways" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl">Your Giveaways</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-2xl">Your Giveaways</CardTitle>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create New Giveaway
+                    <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Create New Giveaway</span>
+                      <span className="sm:hidden">Create</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
@@ -454,23 +455,22 @@ const CompanyDashboard = () => {
                   </DialogContent>
                 </Dialog>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-2 sm:p-6">
                 {loading ? (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground">
+                  <div className="text-center py-8 sm:py-12">
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       Loading giveaways...
                     </p>
                   </div>
                 ) : giveaways.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Gift className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
+                  <div className="text-center py-8 sm:py-12">
+                    <Gift className="w-10 h-10 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-2 sm:mb-4" />
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       You haven't created any giveaways yet.
                     </p>
                   </div>
                 ) : (
-                  // Applying the responsive grid: 2 columns on small screens, 3 on large screens
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
                     {giveaways.map((giveaway) => (
                       <div key={giveaway.id}>
                         <GiveawayCard
@@ -489,12 +489,12 @@ const CompanyDashboard = () => {
                           variant="destructive"
                           size="sm"
                           onClick={(e) => {
-                            e.stopPropagation(); // Stop propagation to prevent card's onView from firing
+                            e.stopPropagation();
                             handleDeleteGiveaway(giveaway.id);
                           }}
-                          className="w-full mt-2"
+                          className="w-full mt-1 sm:mt-2 text-xs sm:text-sm h-7 sm:h-9"
                         >
-                          <Trash2 className="w-4 h-4 mr-2" />
+                          <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                           Delete
                         </Button>
                       </div>
@@ -506,15 +506,16 @@ const CompanyDashboard = () => {
           </TabsContent>
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-6 mt-6">
+          <TabsContent value="products" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-2xl">Your Products</CardTitle>
+              <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-2xl">Your Products</CardTitle>
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add New Product
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Add New Product</span>
+                      <span className="sm:hidden">Add</span>
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[425px]">
@@ -587,16 +588,16 @@ const CompanyDashboard = () => {
                   </DialogContent>
                 </Dialog>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-2 sm:p-6">
                 {products.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Package className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">
+                  <div className="text-center py-8 sm:py-12">
+                    <Package className="w-10 h-10 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-2 sm:mb-4" />
+                    <p className="text-sm sm:text-base text-muted-foreground">
                       You haven't listed any products yet.
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 lg:gap-6">
                     {products.map((product) => (
                       <Card
                         key={product.id}
@@ -612,32 +613,33 @@ const CompanyDashboard = () => {
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
-                              target.onerror = null; // prevents looping
+                              target.onerror = null;
                               target.src = `https://placehold.co/400x400/1e293b/ffffff?text=Product+${product.id}`;
                             }}
                           />
                         </div>
-                        <CardHeader>
-                          <CardTitle className="text-lg">
+                        <CardHeader className="p-2 sm:p-4">
+                          <CardTitle className="text-xs sm:text-lg line-clamp-1">
                             {product.name}
                           </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
+                        <CardContent className="p-2 sm:p-4 pt-0 space-y-2 sm:space-y-4">
                           {product.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-2">
+                            <p className="text-[10px] sm:text-sm text-muted-foreground line-clamp-2 hidden sm:block">
                               {product.description}
                             </p>
                           )}
                           <div className="flex items-center justify-between">
-                            <span className="text-2xl font-bold text-primary">
+                            <span className="text-sm sm:text-2xl font-bold text-primary">
                               ${product.price.toFixed(2)}
                             </span>
                             <Button
                               variant="destructive"
                               size="sm"
                               onClick={() => handleDeleteProduct(product.id)}
+                              className="h-6 w-6 sm:h-8 sm:w-8 p-0"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
                         </CardContent>
