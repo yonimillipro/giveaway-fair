@@ -189,89 +189,89 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-card border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-primary">User Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
-              Welcome, {user?.email || "User"}
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
+          <h1 className="text-lg sm:text-2xl font-bold text-primary">Dashboard</h1>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground hidden sm:inline truncate max-w-[150px]">
+              {user?.email || "User"}
             </span>
             <ThemeToggle />
-            <Button variant="outline" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
+              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Sign Out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
           <Card className="shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Total Entries
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
+                Entries
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <Users className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalEntries}</div>
-              <p className="text-xs text-muted-foreground">
-                Your total participation count
+            <CardContent className="p-2.5 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{totalEntries}</div>
+              <p className="text-[9px] sm:text-xs text-muted-foreground hidden sm:block">
+                Your total participation
               </p>
             </CardContent>
           </Card>
 
           <Card className="shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Active Giveaways
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
+                Active
               </CardTitle>
-              <Gift className="h-4 w-4 text-muted-foreground" />
+              <Gift className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeGiveaways}</div>
-              <p className="text-xs text-muted-foreground">
-                Available to join now
+            <CardContent className="p-2.5 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">{activeGiveaways}</div>
+              <p className="text-[9px] sm:text-xs text-muted-foreground hidden sm:block">
+                Available to join
               </p>
             </CardContent>
           </Card>
 
           <Card className="shadow-lg">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Upcoming Wins (Mock)
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
+              <CardTitle className="text-[10px] sm:text-sm font-medium">
+                Wins
               </CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
+              <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">
-                Check your email for win notifications
+            <CardContent className="p-2.5 sm:p-4 pt-0 sm:pt-0">
+              <div className="text-lg sm:text-2xl font-bold">0</div>
+              <p className="text-[9px] sm:text-xs text-muted-foreground hidden sm:block">
+                Check email for wins
               </p>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="all-giveaways" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-sm">
-            <TabsTrigger value="all-giveaways">All Giveaways</TabsTrigger>
-            <TabsTrigger value="my-entries">My Entries</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 max-w-xs sm:max-w-sm h-9 sm:h-10">
+            <TabsTrigger value="all-giveaways" className="text-xs sm:text-sm">All Giveaways</TabsTrigger>
+            <TabsTrigger value="my-entries" className="text-xs sm:text-sm">My Entries</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="all-giveaways" className="space-y-6 mt-6">
+          <TabsContent value="all-giveaways" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {loading ? (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Loading giveaways...</p>
+              <div className="text-center py-8 sm:py-12">
+                <p className="text-sm sm:text-base text-muted-foreground">Loading giveaways...</p>
               </div>
             ) : giveaways.length === 0 ? (
-              <div className="text-center py-12">
-                <Gift className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
+              <div className="text-center py-8 sm:py-12">
+                <Gift className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-muted-foreground">
                   No active giveaways to display.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
                 {giveaways.map((giveaway) => (
                   <GiveawayCard
                     key={giveaway.id}
@@ -292,16 +292,16 @@ const UserDashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="my-entries" className="space-y-6 mt-6">
+          <TabsContent value="my-entries" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
             {myEntries.length === 0 ? (
-              <div className="text-center py-12">
-                <Trophy className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">
+              <div className="text-center py-8 sm:py-12">
+                <Trophy className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-muted-foreground">
                   You haven't joined any giveaways yet.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
                 {myEntries.map((giveaway) => (
                   <GiveawayCard
                     key={giveaway.id}
