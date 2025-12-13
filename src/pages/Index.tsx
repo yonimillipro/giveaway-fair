@@ -4,7 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { GiveawayCard } from "@/components/GiveawayCard";
 import { supabase } from "@/integrations/supabase/client";
-import { Gift, Trophy, Users, Tag } from "lucide-react";
+import { Gift, Trophy, Users, Tag, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import heroImage from "@/assets/hero-image.jpg";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -23,15 +25,46 @@ interface Giveaway {
   company_name?: string;
 }
 
+interface Promotion {
+  id: string;
+  name: string;
+  description: string | null;
+  discount_percentage: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
 const Index = () => {
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [promotionsLoading, setPromotionsLoading] = useState(true);
 
   useEffect(() => {
     fetchGiveaways();
+    fetchPromotions();
   }, []);
+
+  const fetchPromotions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (error) throw error;
+      setPromotions(data || []);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+    } finally {
+      setPromotionsLoading(false);
+    }
+  };
 
   const fetchGiveaways = async () => {
     try {
@@ -215,6 +248,60 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* Promotions Section */}
+      <section className="py-16 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Current Promotions</h2>
+              <p className="text-lg text-muted-foreground">
+                Don't miss out on these amazing deals!
+              </p>
+            </div>
+            <Button variant="outline" onClick={() => navigate("/promotions")}>
+              View All
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+
+          {promotionsLoading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Loading promotions...</p>
+            </div>
+          ) : promotions.length === 0 ? (
+            <div className="text-center py-12">
+              <Tag className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No active promotions at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {promotions.map((promotion) => (
+                <Card key={promotion.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/promotions")}>
+                  <CardHeader className="bg-gradient-primary text-primary-foreground p-4">
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-lg">{promotion.name}</CardTitle>
+                      <Badge variant="secondary" className="text-sm font-bold">
+                        {promotion.discount_percentage}% OFF
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {promotion.description && (
+                      <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{promotion.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Tag className="w-3 h-3" />
+                      <span>Valid until {new Date(promotion.end_date).toLocaleDateString()}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       <Footer />
     </div>
   );

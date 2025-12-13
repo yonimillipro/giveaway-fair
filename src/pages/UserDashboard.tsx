@@ -6,9 +6,10 @@ import { GiveawayCard } from "@/components/GiveawayCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Trophy, Users, Gift } from "lucide-react";
+import { LogOut, Trophy, Users, Gift, Tag } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Badge } from "@/components/ui/badge";
 
 interface Giveaway {
   id: string;
@@ -24,12 +25,41 @@ interface Giveaway {
   company_name?: string;
 }
 
+interface Promotion {
+  id: string;
+  name: string;
+  description: string | null;
+  discount_percentage: number;
+  start_date: string;
+  end_date: string;
+  status: string;
+}
+
 const UserDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [myEntries, setMyEntries] = useState<Giveaway[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [promotionsLoading, setPromotionsLoading] = useState(true);
+
+  const fetchPromotions = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('promotions')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPromotions(data || []);
+    } catch (error) {
+      console.error('Error fetching promotions:', error);
+    } finally {
+      setPromotionsLoading(false);
+    }
+  }, []);
 
   const fetchGiveaways = useCallback(async () => {
     try {
@@ -136,13 +166,16 @@ const UserDashboard = () => {
     if (user) {
       fetchGiveaways();
       fetchMyEntries();
+      fetchPromotions();
     } else {
       // Clear state when user logs out or is undefined
       setGiveaways([]);
       setMyEntries([]);
+      setPromotions([]);
       setLoading(false);
+      setPromotionsLoading(false);
     }
-  }, [user, fetchGiveaways, fetchMyEntries]);
+  }, [user, fetchGiveaways, fetchMyEntries, fetchPromotions]);
 
   const handleJoinGiveaway = async (giveawayId: string) => {
     if (!user) {
@@ -253,9 +286,10 @@ const UserDashboard = () => {
         </div>
 
         <Tabs defaultValue="all-giveaways" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-xs sm:max-w-sm h-9 sm:h-10">
-            <TabsTrigger value="all-giveaways" className="text-xs sm:text-sm">All Giveaways</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 max-w-md sm:max-w-lg h-9 sm:h-10">
+            <TabsTrigger value="all-giveaways" className="text-xs sm:text-sm">Giveaways</TabsTrigger>
             <TabsTrigger value="my-entries" className="text-xs sm:text-sm">My Entries</TabsTrigger>
+            <TabsTrigger value="promotions" className="text-xs sm:text-sm">Promotions</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all-giveaways" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
@@ -314,6 +348,45 @@ const UserDashboard = () => {
                     hasJoined={true}
                     onView={handleGiveawayView}
                   />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="promotions" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+            {promotionsLoading ? (
+              <div className="text-center py-8 sm:py-12">
+                <p className="text-sm sm:text-base text-muted-foreground">Loading promotions...</p>
+              </div>
+            ) : promotions.length === 0 ? (
+              <div className="text-center py-8 sm:py-12">
+                <Tag className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-3 sm:mb-4" />
+                <p className="text-sm sm:text-base text-muted-foreground">
+                  No active promotions at the moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4 md:gap-6">
+                {promotions.map((promotion) => (
+                  <Card key={promotion.id} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => navigate("/promotions")}>
+                    <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-3 sm:p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-sm sm:text-lg line-clamp-1">{promotion.name}</CardTitle>
+                        <Badge variant="secondary" className="text-xs sm:text-sm font-bold shrink-0">
+                          {promotion.discount_percentage}% OFF
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-3 sm:p-4">
+                      {promotion.description && (
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">{promotion.description}</p>
+                      )}
+                      <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
+                        <Tag className="w-3 h-3" />
+                        <span>Valid until {new Date(promotion.end_date).toLocaleDateString()}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
