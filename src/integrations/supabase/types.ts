@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      company_follows: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       giveaway_entries: {
         Row: {
           created_at: string
@@ -99,6 +120,50 @@ export type Database = {
             foreignKeyName: "giveaway_likes_giveaway_id_fkey"
             columns: ["giveaway_id"]
             isOneToOne: false
+            referencedRelation: "giveaways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      giveaway_requirements: {
+        Row: {
+          created_at: string
+          giveaway_id: string
+          id: string
+          require_company_follow: boolean
+          require_email_verified: boolean
+          require_instagram: boolean
+          require_tiktok: boolean
+          require_twitter: boolean
+          require_youtube: boolean
+        }
+        Insert: {
+          created_at?: string
+          giveaway_id: string
+          id?: string
+          require_company_follow?: boolean
+          require_email_verified?: boolean
+          require_instagram?: boolean
+          require_tiktok?: boolean
+          require_twitter?: boolean
+          require_youtube?: boolean
+        }
+        Update: {
+          created_at?: string
+          giveaway_id?: string
+          id?: string
+          require_company_follow?: boolean
+          require_email_verified?: boolean
+          require_instagram?: boolean
+          require_tiktok?: boolean
+          require_twitter?: boolean
+          require_youtube?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_requirements_giveaway_id_fkey"
+            columns: ["giveaway_id"]
+            isOneToOne: true
             referencedRelation: "giveaways"
             referencedColumns: ["id"]
           },
@@ -192,8 +257,12 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          instagram_url: string | null
           logo_url: string | null
+          tiktok_url: string | null
+          twitter_url: string | null
           updated_at: string
+          youtube_url: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -201,8 +270,12 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          instagram_url?: string | null
           logo_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          youtube_url?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -210,8 +283,12 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          instagram_url?: string | null
           logo_url?: string | null
+          tiktok_url?: string | null
+          twitter_url?: string | null
           updated_at?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }
@@ -311,6 +388,38 @@ export type Database = {
         }
         Relationships: []
       }
+      user_task_completions: {
+        Row: {
+          completed_at: string
+          giveaway_id: string
+          id: string
+          task_type: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          giveaway_id: string
+          id?: string
+          task_type: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          giveaway_id?: string
+          id?: string
+          task_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_task_completions_giveaway_id_fkey"
+            columns: ["giveaway_id"]
+            isOneToOne: false
+            referencedRelation: "giveaways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       winners: {
         Row: {
           giveaway_id: string
@@ -348,6 +457,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_company_follower_count: {
+        Args: { company_uuid: string }
+        Returns: number
+      }
       get_giveaway_like_count: {
         Args: { giveaway_uuid: string }
         Returns: number
@@ -359,9 +472,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      user_follows_company: { Args: { company_uuid: string }; Returns: boolean }
       user_has_liked_giveaway: {
         Args: { giveaway_uuid: string }
         Returns: boolean
+      }
+      validate_giveaway_entry: {
+        Args: {
+          p_giveaway_id: string
+          p_user_email_verified: boolean
+          p_user_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {

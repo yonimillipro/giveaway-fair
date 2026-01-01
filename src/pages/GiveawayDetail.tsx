@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { GiveawayRequirements } from "@/components/GiveawayRequirements";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import {
   Carousel,
   CarouselContent,
@@ -24,6 +26,7 @@ import {
   Eye,
   Share2,
   Heart,
+  Lock,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 
@@ -49,7 +52,7 @@ interface GiveawayImage {
 const GiveawayDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isEmailVerified } = useAuth();
 
   const [giveaway, setGiveaway] = useState<GiveawayDetail | null>(null);
   const [images, setImages] = useState<string[]>([]);
@@ -60,6 +63,7 @@ const GiveawayDetail = () => {
   const [likesCount, setLikesCount] = useState(0);
   const [hasLiked, setHasLiked] = useState(false);
   const [likingInProgress, setLikingInProgress] = useState(false);
+  const [allRequirementsMet, setAllRequirementsMet] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -143,8 +147,26 @@ const GiveawayDetail = () => {
 
     if (!giveaway) return;
 
+    // Validate requirements on backend before joining
     setJoining(true);
     try {
+      // Call backend validation function
+      const { data: validationResult, error: validationError } = await supabase
+        .rpc('validate_giveaway_entry', {
+          p_user_id: user.id,
+          p_giveaway_id: giveaway.id,
+          p_user_email_verified: isEmailVerified
+        });
+
+      if (validationError) throw validationError;
+
+      const result = validationResult as { valid: boolean; errors: string[] } | null;
+      if (!result?.valid) {
+        const errors = result?.errors || ['Requirements not met'];
+        toast.error(errors[0]);
+        return;
+      }
+
       const { error } = await supabase
         .from("giveaway_entries")
         .insert({ user_id: user.id, giveaway_id: giveaway.id });
@@ -278,6 +300,7 @@ const GiveawayDetail = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header />
+      <EmailVerificationBanner />
 
       <main className="flex-1">
         {/* Back Button */}
@@ -451,6 +474,16 @@ const GiveawayDetail = () => {
                 )}
               </div>
 
+              {/* Giveaway Requirements */}
+              {!hasJoined && !isEnded && (
+                <GiveawayRequirements
+                  giveawayId={giveaway.id}
+                  companyId={giveaway.company_id}
+                  onAllRequirementsMet={setAllRequirementsMet}
+                  disabled={joining}
+                />
+              )}
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
                 {hasJoined ? (
@@ -466,6 +499,16 @@ const GiveawayDetail = () => {
                 ) : isEnded ? (
                   <Button size="lg" variant="secondary" className="flex-1" disabled>
                     Giveaway Ended
+                  </Button>
+                ) : !allRequirementsMet ? (
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="flex-1"
+                    disabled
+                  >
+                    <Lock className="w-5 h-5 mr-2" />
+                    Complete Requirements to Join
                   </Button>
                 ) : (
                   <Button
