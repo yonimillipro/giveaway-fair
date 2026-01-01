@@ -8,9 +8,12 @@ interface AuthContextType {
   session: Session | null;
   userRole: 'user' | 'company' | 'admin' | null;
   loading: boolean;
+  isEmailVerified: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  resendVerificationEmail: () => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +24,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [userRole, setUserRole] = useState<'user' | 'company' | 'admin' | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Check if email is verified (either confirmed via email or via Google OAuth)
+  const isEmailVerified = user?.email_confirmed_at != null || 
+    user?.app_metadata?.provider === 'google';
 
   const fetchUserRole = async (userId: string) => {
     const { data, error } = await supabase
@@ -113,14 +120,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return { error };
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+      }
+    });
+
+    return { error };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUserRole(null);
     navigate('/');
   };
 
+  const resendVerificationEmail = async () => {
+    if (!user?.email) {
+      return { error: { message: 'No email address found' } };
+    }
+
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: user.email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+      }
+    });
+
+    return { error };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      userRole, 
+      loading, 
+      isEmailVerified,
+      signUp, 
+      signIn, 
+      signInWithGoogle,
+      signOut,
+      resendVerificationEmail
+    }}>
       {children}
     </AuthContext.Provider>
   );
