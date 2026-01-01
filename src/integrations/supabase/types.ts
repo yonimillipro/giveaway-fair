@@ -249,13 +249,6 @@ export type Database = {
             referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "promotion_products_promotion_id_fkey"
-            columns: ["promotion_id"]
-            isOneToOne: false
-            referencedRelation: "public_promotions"
-            referencedColumns: ["id"]
-          },
         ]
       }
       promotions: {
@@ -352,36 +345,7 @@ export type Database = {
       }
     }
     Views: {
-      public_promotions: {
-        Row: {
-          description: string | null
-          discount_percentage: number | null
-          end_date: string | null
-          id: string | null
-          name: string | null
-          start_date: string | null
-          status: string | null
-        }
-        Insert: {
-          description?: string | null
-          discount_percentage?: number | null
-          end_date?: string | null
-          id?: string | null
-          name?: string | null
-          start_date?: string | null
-          status?: string | null
-        }
-        Update: {
-          description?: string | null
-          discount_percentage?: number | null
-          end_date?: string | null
-          id?: string | null
-          name?: string | null
-          start_date?: string | null
-          status?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_giveaway_like_count: {

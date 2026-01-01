@@ -58,22 +58,18 @@ export const GiveawayCard = ({
 
   const fetchLikes = async () => {
     try {
-      const { count } = await supabase
-        .from("giveaway_likes")
-        .select("*", { count: "exact", head: true })
-        .eq("giveaway_id", id);
+      // Use secure RPC function to get like count without exposing user_ids
+      const { data: countData } = await supabase
+        .rpc('get_giveaway_like_count', { giveaway_uuid: id });
 
-      setLikesCount(count || 0);
+      setLikesCount(countData || 0);
 
       if (user) {
-        const { data } = await supabase
-          .from("giveaway_likes")
-          .select("id")
-          .eq("giveaway_id", id)
-          .eq("user_id", user.id)
-          .single();
+        // Use secure RPC function to check if user has liked
+        const { data: hasLikedData } = await supabase
+          .rpc('user_has_liked_giveaway', { giveaway_uuid: id });
 
-        setHasLiked(!!data);
+        setHasLiked(!!hasLikedData);
       }
     } catch (error) {
       console.error("Error fetching likes:", error);

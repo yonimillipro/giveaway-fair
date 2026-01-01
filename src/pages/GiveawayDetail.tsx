@@ -103,11 +103,9 @@ const GiveawayDetail = () => {
 
       setEntriesCount(count || 0);
 
-      // Fetch likes count
-      const { count: likeCount } = await supabase
-        .from("giveaway_likes")
-        .select("*", { count: "exact", head: true })
-        .eq("giveaway_id", id);
+      // Fetch likes count using secure RPC function
+      const { data: likeCount } = await supabase
+        .rpc('get_giveaway_like_count', { giveaway_uuid: id });
 
       setLikesCount(likeCount || 0);
 
@@ -118,18 +116,15 @@ const GiveawayDetail = () => {
           .select("id")
           .eq("giveaway_id", id)
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
         setHasJoined(!!entryData);
 
-        const { data: likeData } = await supabase
-          .from("giveaway_likes")
-          .select("id")
-          .eq("giveaway_id", id)
-          .eq("user_id", user.id)
-          .single();
+        // Use secure RPC function to check if user has liked
+        const { data: hasLikedData } = await supabase
+          .rpc('user_has_liked_giveaway', { giveaway_uuid: id });
 
-        setHasLiked(!!likeData);
+        setHasLiked(!!hasLikedData);
       }
     } catch (error) {
       console.error("Error fetching giveaway:", error);
