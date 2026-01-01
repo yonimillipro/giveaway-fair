@@ -50,11 +50,12 @@ const Index = () => {
 
   const fetchPromotions = async () => {
     try {
+      // Only select public fields, excluding created_by for security
       const { data, error } = await supabase
         .from('promotions')
-        .select('*')
+        .select('id, name, description, discount_percentage, start_date, end_date, status')
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order('start_date', { ascending: false })
         .limit(3);
 
       if (error) throw error;
