@@ -51,7 +51,7 @@ serve(async (req) => {
     }
 
     // Get company details from request
-    const { email, password, full_name, logo_url } = await req.json()
+    const { email, password, full_name, logo_url, youtube_url, instagram_url, twitter_url, tiktok_url } = await req.json()
 
     // Check if user already exists
     const { data: existingUser } = await supabaseClient.auth.admin.listUsers()
@@ -63,10 +63,10 @@ serve(async (req) => {
       // User exists, just update their role and profile
       userId = userExists.id
       
-      // Update profile with logo
+      // Update profile with logo and social links
       await supabaseClient
         .from('profiles')
-        .update({ full_name, logo_url })
+        .update({ full_name, logo_url, youtube_url, instagram_url, twitter_url, tiktok_url })
         .eq('id', userId)
     } else {
       // Create new auth user
@@ -88,11 +88,11 @@ serve(async (req) => {
       
       userId = authData.user.id
 
-      // Update profile with logo_url after user is created
-      if (logo_url) {
+      // Update profile with logo_url and social links after user is created
+      if (logo_url || youtube_url || instagram_url || twitter_url || tiktok_url) {
         await supabaseClient
           .from('profiles')
-          .update({ logo_url })
+          .update({ logo_url, youtube_url, instagram_url, twitter_url, tiktok_url })
           .eq('id', userId)
       }
     }
