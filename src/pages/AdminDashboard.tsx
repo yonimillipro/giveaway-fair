@@ -138,6 +138,10 @@ const AdminDashboard = () => {
     password: "",
     full_name: "",
     logo_url: "",
+    youtube_url: "",
+    instagram_url: "",
+    twitter_url: "",
+    tiktok_url: "",
   });
   const [selectedCompanyLogo, setSelectedCompanyLogo] = useState<File | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -151,6 +155,14 @@ const AdminDashboard = () => {
     image_url: "",
     prize_value: "",
     end_date: "",
+  });
+  const [giveawayRequirements, setGiveawayRequirements] = useState({
+    require_email_verified: true,
+    require_company_follow: true,
+    require_youtube: false,
+    require_instagram: false,
+    require_twitter: false,
+    require_tiktok: false,
   });
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -175,6 +187,14 @@ const AdminDashboard = () => {
       image_url: "",
       prize_value: "",
       end_date: "",
+    });
+    setGiveawayRequirements({
+      require_email_verified: true,
+      require_company_follow: true,
+      require_youtube: false,
+      require_instagram: false,
+      require_twitter: false,
+      require_tiktok: false,
     });
     setSelectedImage(null);
     setEditingGiveaway(null);
@@ -206,25 +226,47 @@ const AdminDashboard = () => {
 
   // Sync state with form when editingGiveaway changes
   useEffect(() => {
-    if (editingGiveaway) {
-      // Format the date for the datetime-local input
-      const formattedEndDate = format(
-        new Date(editingGiveaway.end_date),
-        "yyyy-MM-dd'T'HH:mm"
-      );
+    const loadGiveawayData = async () => {
+      if (editingGiveaway) {
+        // Format the date for the datetime-local input
+        const formattedEndDate = format(
+          new Date(editingGiveaway.end_date),
+          "yyyy-MM-dd'T'HH:mm"
+        );
 
-      setGiveawayFormData({
-        company_id: editingGiveaway.company_id,
-        title: editingGiveaway.title,
-        description: editingGiveaway.description,
-        image_url: editingGiveaway.image_url || "",
-        prize_value: editingGiveaway.prize_value?.toString() || "",
-        end_date: formattedEndDate,
-      });
-      setIsGiveawayDialogOpen(true);
-    } else {
-      resetGiveawayForm();
-    }
+        setGiveawayFormData({
+          company_id: editingGiveaway.company_id,
+          title: editingGiveaway.title,
+          description: editingGiveaway.description,
+          image_url: editingGiveaway.image_url || "",
+          prize_value: editingGiveaway.prize_value?.toString() || "",
+          end_date: formattedEndDate,
+        });
+
+        // Load existing requirements
+        const { data: reqData } = await supabase
+          .from("giveaway_requirements")
+          .select("*")
+          .eq("giveaway_id", editingGiveaway.id)
+          .single();
+
+        if (reqData) {
+          setGiveawayRequirements({
+            require_email_verified: reqData.require_email_verified,
+            require_company_follow: reqData.require_company_follow,
+            require_youtube: reqData.require_youtube,
+            require_instagram: reqData.require_instagram,
+            require_twitter: reqData.require_twitter,
+            require_tiktok: reqData.require_tiktok,
+          });
+        }
+
+        setIsGiveawayDialogOpen(true);
+      } else {
+        resetGiveawayForm();
+      }
+    };
+    loadGiveawayData();
   }, [editingGiveaway]);
 
   // Sync state with form when editingPromotion changes
@@ -473,6 +515,10 @@ const AdminDashboard = () => {
             password: companyFormData.password,
             full_name: companyFormData.full_name,
             logo_url: logoUrl,
+            youtube_url: companyFormData.youtube_url,
+            instagram_url: companyFormData.instagram_url,
+            twitter_url: companyFormData.twitter_url,
+            tiktok_url: companyFormData.tiktok_url,
           }),
         }
       );
@@ -485,7 +531,7 @@ const AdminDashboard = () => {
 
       toast.success("Company account created successfully!");
       setIsCompanyDialogOpen(false);
-      setCompanyFormData({ email: "", password: "", full_name: "", logo_url: "" });
+      setCompanyFormData({ email: "", password: "", full_name: "", logo_url: "", youtube_url: "", instagram_url: "", twitter_url: "", tiktok_url: "" });
       setSelectedCompanyLogo(null);
       const companyProfiles = await fetchCompanies();
       fetchData();
@@ -616,6 +662,38 @@ const AdminDashboard = () => {
         }));
 
         await supabase.from("giveaway_images").insert(imageInserts);
+      }
+
+      // Save giveaway requirements
+      const requirementsPayload = {
+        giveaway_id: giveawayId,
+        require_email_verified: giveawayRequirements.require_email_verified,
+        require_company_follow: giveawayRequirements.require_company_follow,
+        require_youtube: giveawayRequirements.require_youtube,
+        require_instagram: giveawayRequirements.require_instagram,
+        require_twitter: giveawayRequirements.require_twitter,
+        require_tiktok: giveawayRequirements.require_tiktok,
+      };
+
+      if (editingGiveaway) {
+        // Update existing requirements
+        const { data: existingReq } = await supabase
+          .from("giveaway_requirements")
+          .select("id")
+          .eq("giveaway_id", giveawayId)
+          .single();
+
+        if (existingReq) {
+          await supabase
+            .from("giveaway_requirements")
+            .update(requirementsPayload)
+            .eq("giveaway_id", giveawayId);
+        } else {
+          await supabase.from("giveaway_requirements").insert(requirementsPayload);
+        }
+      } else {
+        // Create new requirements
+        await supabase.from("giveaway_requirements").insert(requirementsPayload);
       }
 
       setIsGiveawayDialogOpen(false);
@@ -1014,6 +1092,65 @@ const AdminDashboard = () => {
                     </p>
                   )}
                 </div>
+                
+                {/* Social Media Links Section */}
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-semibold">Social Media Links (Optional)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Add company social media links for giveaway entry requirements.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="youtube_url" className="text-xs">YouTube</Label>
+                      <Input
+                        id="youtube_url"
+                        type="url"
+                        value={companyFormData.youtube_url}
+                        onChange={(e) =>
+                          setCompanyFormData({ ...companyFormData, youtube_url: e.target.value })
+                        }
+                        placeholder="https://youtube.com/@channel"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="instagram_url" className="text-xs">Instagram</Label>
+                      <Input
+                        id="instagram_url"
+                        type="url"
+                        value={companyFormData.instagram_url}
+                        onChange={(e) =>
+                          setCompanyFormData({ ...companyFormData, instagram_url: e.target.value })
+                        }
+                        placeholder="https://instagram.com/username"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="twitter_url" className="text-xs">Twitter/X</Label>
+                      <Input
+                        id="twitter_url"
+                        type="url"
+                        value={companyFormData.twitter_url}
+                        onChange={(e) =>
+                          setCompanyFormData({ ...companyFormData, twitter_url: e.target.value })
+                        }
+                        placeholder="https://twitter.com/username"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="tiktok_url" className="text-xs">TikTok</Label>
+                      <Input
+                        id="tiktok_url"
+                        type="url"
+                        value={companyFormData.tiktok_url}
+                        onChange={(e) =>
+                          setCompanyFormData({ ...companyFormData, tiktok_url: e.target.value })
+                        }
+                        placeholder="https://tiktok.com/@username"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
                 <Button type="submit" className="w-full" disabled={uploadingLogo}>
                   {uploadingLogo ? "Creating..." : "Create Company"}
                 </Button>
@@ -1212,6 +1349,86 @@ const AdminDashboard = () => {
                     required
                   />
                 </div>
+                
+                {/* Giveaway Requirements Section */}
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-semibold">Entry Requirements</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Configure what users must complete to enter this giveaway.
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="req_email"
+                        checked={giveawayRequirements.require_email_verified}
+                        onCheckedChange={(checked) =>
+                          setGiveawayRequirements({ ...giveawayRequirements, require_email_verified: !!checked })
+                        }
+                      />
+                      <label htmlFor="req_email" className="text-sm font-medium leading-none">
+                        Email Verification Required
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="req_follow"
+                        checked={giveawayRequirements.require_company_follow}
+                        onCheckedChange={(checked) =>
+                          setGiveawayRequirements({ ...giveawayRequirements, require_company_follow: !!checked })
+                        }
+                      />
+                      <label htmlFor="req_follow" className="text-sm font-medium leading-none">
+                        Must Follow Company
+                      </label>
+                    </div>
+                    <div className="border-t pt-3">
+                      <p className="text-xs text-muted-foreground mb-2">Social Media Tasks (requires company social links)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="req_youtube"
+                            checked={giveawayRequirements.require_youtube}
+                            onCheckedChange={(checked) =>
+                              setGiveawayRequirements({ ...giveawayRequirements, require_youtube: !!checked })
+                            }
+                          />
+                          <label htmlFor="req_youtube" className="text-sm leading-none">YouTube</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="req_instagram"
+                            checked={giveawayRequirements.require_instagram}
+                            onCheckedChange={(checked) =>
+                              setGiveawayRequirements({ ...giveawayRequirements, require_instagram: !!checked })
+                            }
+                          />
+                          <label htmlFor="req_instagram" className="text-sm leading-none">Instagram</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="req_twitter"
+                            checked={giveawayRequirements.require_twitter}
+                            onCheckedChange={(checked) =>
+                              setGiveawayRequirements({ ...giveawayRequirements, require_twitter: !!checked })
+                            }
+                          />
+                          <label htmlFor="req_twitter" className="text-sm leading-none">Twitter/X</label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="req_tiktok"
+                            checked={giveawayRequirements.require_tiktok}
+                            onCheckedChange={(checked) =>
+                              setGiveawayRequirements({ ...giveawayRequirements, require_tiktok: !!checked })
+                            }
+                          />
+                          <label htmlFor="req_tiktok" className="text-sm leading-none">TikTok</label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
                 <Button
                   type="submit"
                   className="w-full"
