@@ -38,9 +38,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!error && data) {
       setUserRole(data.role as 'user' | 'company' | 'admin');
-      return data.role;
+      return data.role as 'user' | 'company' | 'admin';
     }
-    return null;
+    return 'user' as const;
+  };
+
+  // Unified redirect function based on role
+  const redirectByRole = (role: 'user' | 'company' | 'admin' | null) => {
+    if (role === 'admin') {
+      navigate('/admin');
+    } else if (role === 'company') {
+      navigate('/company');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   useEffect(() => {
@@ -50,8 +61,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          setTimeout(() => {
-            fetchUserRole(session.user.id);
+          // Use setTimeout to avoid deadlock with Supabase auth
+          setTimeout(async () => {
+            const role = await fetchUserRole(session.user.id);
+            
+            // Redirect on SIGNED_IN event (covers Google OAuth callback)
+            if (event === 'SIGNED_IN') {
+              redirectByRole(role);
+            }
           }, 0);
         } else {
           setUserRole(null);
@@ -106,15 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!error && data.user) {
       const role = await fetchUserRole(data.user.id);
-      
-      // Redirect based on role
-      if (role === 'admin') {
-        navigate('/admin');
-      } else if (role === 'company') {
-        navigate('/company');
-      } else {
-        navigate('/dashboard');
-      }
+      redirectByRole(role);
     }
 
     return { error };

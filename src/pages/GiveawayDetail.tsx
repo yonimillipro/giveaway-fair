@@ -9,6 +9,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { GiveawayRequirements } from "@/components/GiveawayRequirements";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
+import { CompanyInfo } from "@/components/CompanyInfo";
 import {
   Carousel,
   CarouselContent,
@@ -29,6 +30,7 @@ import {
   Lock,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface GiveawayDetail {
   id: string;
@@ -382,6 +384,16 @@ const GiveawayDetail = () => {
                   ))}
                 </div>
               )}
+
+              {/* Company Info with Follow Button - Below Image */}
+              <div className="p-4 border rounded-xl bg-card">
+                <CompanyInfo 
+                  companyId={giveaway.company_id} 
+                  showFollowButton={true}
+                  showSocialLinks={true}
+                  size="md"
+                />
+              </div>
             </div>
 
             {/* Details Section */}
