@@ -171,12 +171,16 @@ const AdminDashboard = () => {
   const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [selectedPromotionImage, setSelectedPromotionImage] = useState<File | null>(null);
+  const [uploadingPromotionImage, setUploadingPromotionImage] = useState(false);
   const [promotionFormData, setPromotionFormData] = useState({
     name: "",
     description: "",
     discount_percentage: "",
     start_date: "",
     end_date: "",
+    company_id: "",
+    product_image_url: "",
   });
 
   const resetGiveawayForm = () => {
@@ -207,8 +211,11 @@ const AdminDashboard = () => {
       discount_percentage: "",
       start_date: "",
       end_date: "",
+      company_id: "",
+      product_image_url: "",
     });
     setSelectedProductIds([]);
+    setSelectedPromotionImage(null);
     setEditingPromotion(null);
   };
 
@@ -287,6 +294,8 @@ const AdminDashboard = () => {
         discount_percentage: editingPromotion.discount_percentage.toString(),
         start_date: formattedStartDate,
         end_date: formattedEndDate,
+        company_id: "",  // Will be loaded if we add company_id to promotions table
+        product_image_url: "",
       });
 
       // Fetch linked products for this promotion
@@ -1472,8 +1481,40 @@ const AdminDashboard = () => {
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSavePromotion} className="space-y-4">
+                {/* Select Company (Required) */}
                 <div className="space-y-2">
-                  <Label htmlFor="promotion_name">Name *</Label>
+                  <Label htmlFor="promotion_company">Select Company *</Label>
+                  <Select
+                    value={promotionFormData.company_id}
+                    onValueChange={(value) =>
+                      setPromotionFormData({
+                        ...promotionFormData,
+                        company_id: value,
+                      })
+                    }
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.length === 0 ? (
+                        <div className="p-2 text-sm text-muted-foreground">
+                          No companies available
+                        </div>
+                      ) : (
+                        companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.full_name || company.email}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="promotion_name">Product Name *</Label>
                   <Input
                     id="promotion_name"
                     value={promotionFormData.name}
@@ -1483,9 +1524,56 @@ const AdminDashboard = () => {
                         name: e.target.value,
                       })
                     }
+                    placeholder="e.g., Summer T-Shirt Sale"
                     required
                   />
                 </div>
+
+                {/* Product Image Upload */}
+                <div className="space-y-2">
+                  <Label htmlFor="promotion_image">Product Image</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="promotion_image_file"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedPromotionImage(file);
+                            setPromotionFormData({
+                              ...promotionFormData,
+                              product_image_url: "",
+                            });
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div className="text-center text-sm text-muted-foreground">or</div>
+                    <Input
+                      id="promotion_image_url"
+                      type="url"
+                      value={promotionFormData.product_image_url}
+                      onChange={(e) => {
+                        setPromotionFormData({
+                          ...promotionFormData,
+                          product_image_url: e.target.value,
+                        });
+                        setSelectedPromotionImage(null);
+                      }}
+                      placeholder="https://example.com/product-image.jpg"
+                    />
+                  </div>
+                  {selectedPromotionImage && (
+                    <p className="text-sm text-muted-foreground">
+                      Selected: {selectedPromotionImage.name}
+                    </p>
+                  )}
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="promotion_description">Description</Label>
                   <Textarea
@@ -1582,8 +1670,8 @@ const AdminDashboard = () => {
                     </p>
                   )}
                 </div>
-                <Button type="submit" className="w-full">
-                  {editingPromotion ? "Save Changes" : "Create Promotion"}
+                <Button type="submit" className="w-full" disabled={uploadingPromotionImage}>
+                  {uploadingPromotionImage ? "Uploading..." : editingPromotion ? "Save Changes" : "Create Promotion"}
                 </Button>
               </form>
             </DialogContent>
