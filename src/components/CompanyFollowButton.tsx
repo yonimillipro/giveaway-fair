@@ -21,7 +21,7 @@ export const CompanyFollowButton = ({
   variant = "outline",
   onFollowChange,
 }: CompanyFollowButtonProps) => {
-  const { user } = useAuth();
+  const { user, isEmailVerified } = useAuth();
   const navigate = useNavigate();
   const [isFollowing, setIsFollowing] = useState(false);
   const [followerCount, setFollowerCount] = useState(0);
@@ -58,6 +58,12 @@ export const CompanyFollowButton = ({
     if (!user) {
       toast.info("Please sign in to follow companies");
       navigate("/auth");
+      return;
+    }
+
+    // Prevent unverified users from following
+    if (!isEmailVerified) {
+      toast.error("Please verify your email before following companies");
       return;
     }
 
