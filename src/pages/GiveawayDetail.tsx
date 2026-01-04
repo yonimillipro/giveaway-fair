@@ -390,7 +390,6 @@ const GiveawayDetail = () => {
                 <CompanyInfo 
                   companyId={giveaway.company_id} 
                   showFollowButton={true}
-                  showSocialLinks={false}
                   size="md"
                 />
               </div>
