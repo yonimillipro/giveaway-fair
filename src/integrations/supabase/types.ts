@@ -330,6 +330,7 @@ export type Database = {
       }
       promotions: {
         Row: {
+          company_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -337,11 +338,13 @@ export type Database = {
           end_date: string
           id: string
           name: string
+          product_image_url: string | null
           start_date: string
           status: string
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -349,11 +352,13 @@ export type Database = {
           end_date: string
           id?: string
           name: string
+          product_image_url?: string | null
           start_date: string
           status?: string
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -361,6 +366,7 @@ export type Database = {
           end_date?: string
           id?: string
           name?: string
+          product_image_url?: string | null
           start_date?: string
           status?: string
           updated_at?: string
