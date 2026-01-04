@@ -892,7 +892,14 @@ const AdminDashboard = () => {
       return;
     }
 
+    if (!promotionFormData.company_id) {
+      toast.error("Please select a company");
+      return;
+    }
+
     try {
+      setUploadingPromotionImage(true);
+      
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -900,6 +907,15 @@ const AdminDashboard = () => {
       if (!user) {
         toast.error("You must be logged in");
         return;
+      }
+
+      // Handle image upload if a file is selected
+      let imageUrl = promotionFormData.product_image_url;
+      if (selectedPromotionImage) {
+        const uploadedUrl = await handleImageUpload(selectedPromotionImage);
+        if (uploadedUrl) {
+          imageUrl = uploadedUrl;
+        }
       }
 
       const payload = {
@@ -910,6 +926,8 @@ const AdminDashboard = () => {
         end_date: promotionFormData.end_date,
         created_by: user.id,
         status: "active",
+        company_id: promotionFormData.company_id,
+        product_image_url: imageUrl || null,
       };
 
       let promotionId: string;
@@ -958,6 +976,8 @@ const AdminDashboard = () => {
     } catch (error) {
       console.error("Error saving promotion:", error);
       toast.error("Failed to save promotion");
+    } finally {
+      setUploadingPromotionImage(false);
     }
   };
 

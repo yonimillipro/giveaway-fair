@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tag, ChevronLeft, ChevronRight } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tag, ChevronLeft, ChevronRight, Building2, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface Promotion {
@@ -14,6 +15,10 @@ interface Promotion {
   start_date: string;
   end_date: string;
   status: string;
+  company_id: string | null;
+  product_image_url: string | null;
+  company_name?: string;
+  company_logo?: string;
 }
 
 interface PromotionCarouselProps {
@@ -42,12 +47,33 @@ export const PromotionCarousel = ({ autoScrollInterval = 4000 }: PromotionCarous
     try {
       const { data, error } = await supabase
         .from('promotions')
-        .select('id, name, description, discount_percentage, start_date, end_date, status')
+        .select('id, name, description, discount_percentage, start_date, end_date, status, company_id, product_image_url')
         .eq('status', 'active')
         .order('start_date', { ascending: false });
 
       if (error) throw error;
-      setPromotions(data || []);
+
+      // Fetch company info for each promotion
+      const promotionsWithCompany = await Promise.all(
+        (data || []).map(async (promo) => {
+          if (promo.company_id) {
+            const { data: companyData } = await supabase
+              .from('profiles')
+              .select('full_name, logo_url')
+              .eq('id', promo.company_id)
+              .single();
+
+            return {
+              ...promo,
+              company_name: companyData?.full_name || undefined,
+              company_logo: companyData?.logo_url || undefined,
+            };
+          }
+          return promo;
+        })
+      );
+
+      setPromotions(promotionsWithCompany);
     } catch (error) {
       console.error('Error fetching promotions:', error);
     } finally {
@@ -145,6 +171,25 @@ export const PromotionCarousel = ({ autoScrollInterval = 4000 }: PromotionCarous
               className="flex-shrink-0 w-[280px] sm:w-[320px] overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
               onClick={() => navigate("/promotions")}
             >
+              {/* Product Image */}
+              {promotion.product_image_url ? (
+                <div className="aspect-[16/9] w-full overflow-hidden bg-muted">
+                  <img
+                    src={promotion.product_image_url}
+                    alt={promotion.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "https://placehold.co/320x180/A0A0A0/FFFFFF?text=Product";
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="aspect-[16/9] w-full bg-muted flex items-center justify-center">
+                  <Package className="w-8 h-8 text-muted-foreground/50" />
+                </div>
+              )}
               <CardHeader className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-3 sm:p-4">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-sm sm:text-base line-clamp-1">{promotion.name}</CardTitle>
@@ -157,9 +202,25 @@ export const PromotionCarousel = ({ autoScrollInterval = 4000 }: PromotionCarous
                 {promotion.description && (
                   <p className="text-xs sm:text-sm text-muted-foreground mb-2 line-clamp-2">{promotion.description}</p>
                 )}
-                <div className="flex items-center gap-2 text-[10px] sm:text-xs text-muted-foreground">
-                  <Tag className="w-3 h-3" />
-                  <span>Valid until {new Date(promotion.end_date).toLocaleDateString()}</span>
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  {/* Company Info */}
+                  {promotion.company_name && (
+                    <div className="flex items-center gap-1.5">
+                      <Avatar className="h-5 w-5 border border-border">
+                        <AvatarImage src={promotion.company_logo || undefined} alt={promotion.company_name} />
+                        <AvatarFallback className="bg-muted text-muted-foreground text-[8px]">
+                          <Building2 className="h-3 w-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[80px]">
+                        {promotion.company_name}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-muted-foreground">
+                    <Tag className="w-3 h-3" />
+                    <span>Until {new Date(promotion.end_date).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
