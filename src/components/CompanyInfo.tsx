@@ -15,7 +15,6 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 interface CompanyInfoProps {
   companyId: string;
   showFollowButton?: boolean;
-  showSocialLinks?: boolean;
   size?: "sm" | "md" | "lg";
 }
 
@@ -31,7 +30,6 @@ interface CompanyProfile {
 export const CompanyInfo = ({
   companyId,
   showFollowButton = true,
-  showSocialLinks = true,
   size = "md",
 }: CompanyInfoProps) => {
   const [company, setCompany] = useState<CompanyProfile | null>(null);
@@ -115,7 +113,7 @@ export const CompanyInfo = ({
       </div>
 
       {/* Social Links */}
-      {showSocialLinks && hasSocialLinks && (
+      {hasSocialLinks && (
         <div className="flex flex-wrap gap-2">
           {company.youtube_url && (
             <Button
