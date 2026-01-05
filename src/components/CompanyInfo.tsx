@@ -42,20 +42,18 @@ export const CompanyInfo = ({
 
   const fetchCompanyInfo = async () => {
     try {
-      // Fetch company profile
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, logo_url, youtube_url, instagram_url, twitter_url, tiktok_url")
-        .eq("id", companyId)
-        .single();
+      // Use edge function to fetch company info (bypasses RLS)
+      const { data, error } = await supabase.functions.invoke("get-company-info", {
+        body: { companyId },
+      });
 
-      setCompany(profileData);
+      if (error) {
+        console.error("Error fetching company info:", error);
+        return;
+      }
 
-      // Fetch follower count
-      const { data: countData } = await supabase
-        .rpc('get_company_follower_count', { company_uuid: companyId });
-      
-      setFollowerCount(countData || 0);
+      setCompany(data.company);
+      setFollowerCount(data.followerCount || 0);
     } catch (error) {
       console.error("Error fetching company info:", error);
     } finally {
