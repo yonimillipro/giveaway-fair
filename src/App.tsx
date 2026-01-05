@@ -13,6 +13,7 @@ import UserDashboard from "./pages/UserDashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import Promotions from "./pages/Promotions";
+import PromotionDetail from "./pages/PromotionDetail";
 import GiveawayDetail from "./pages/GiveawayDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/promotions" element={<Promotions />} />
+              <Route path="/promotion/:id" element={<PromotionDetail />} />
               <Route path="/giveaway/:id" element={<GiveawayDetail />} />
               <Route
                 path="/profile"

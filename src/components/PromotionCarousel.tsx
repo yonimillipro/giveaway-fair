@@ -169,7 +169,7 @@ export const PromotionCarousel = ({ autoScrollInterval = 4000 }: PromotionCarous
             <Card 
               key={promotion.id} 
               className="flex-shrink-0 w-[280px] sm:w-[320px] overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => navigate("/promotions")}
+              onClick={() => navigate(`/promotion/${promotion.id}`)}
             >
               {/* Product Image */}
               {promotion.product_image_url ? (
