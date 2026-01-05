@@ -97,14 +97,14 @@ export const GiveawayRequirements = ({
         setRequirements(reqData);
       }
 
-      // Fetch company profile for social links
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("youtube_url, instagram_url, twitter_url, tiktok_url, full_name")
-        .eq("id", companyId)
-        .maybeSingle();
+      // Fetch company profile for social links using edge function (bypasses RLS)
+      const { data: companyData, error: companyError } = await supabase.functions.invoke("get-company-info", {
+        body: { companyId },
+      });
 
-      setCompanyProfile(profileData);
+      if (!companyError && companyData?.company) {
+        setCompanyProfile(companyData.company);
+      }
 
       // Check follow status
       if (user) {
