@@ -68,13 +68,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(async () => {
             const role = await fetchUserRole(session.user.id);
             
-            // Only redirect on actual sign-in, not on page refresh/return from external link
-            // INITIAL_SESSION means session was restored from storage (page load/return)
-            // SIGNED_IN with isInitialSession=false means fresh login
-            if (event === 'SIGNED_IN' && !isInitialSession) {
+            // Only redirect on an intentional sign-in flow (e.g. user just logged in / OAuth callback).
+            // When users leave the app (social share) and come back, Supabase may emit a SIGNED_IN event again
+            // (session re-hydration / refresh). We should NOT navigate away from the page they came back to.
+            const path = window.location.pathname;
+            const shouldRedirect = path === '/auth' || path === '/';
+
+            if (event === 'SIGNED_IN' && !isInitialSession && shouldRedirect) {
               redirectByRole(role);
             }
-            
+
             // After first auth state change, mark as not initial
             isInitialSession = false;
           }, 0);
