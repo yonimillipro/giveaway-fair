@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Building2, Calendar, Package, Tag } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CompanyFollowButton } from "@/components/CompanyFollowButton";
 
 interface Promotion {
   id: string;
@@ -214,24 +215,27 @@ const PromotionDetail = () => {
             </div>
 
             {/* Company Info */}
-            {company && (
+            {company && promotion.company_id && (
               <Card className="mt-4">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Avatar className="h-12 w-12 border border-border">
-                    <AvatarImage
-                      src={company.logo_url || undefined}
-                      alt={company.full_name || "Company"}
-                    />
-                    <AvatarFallback className="bg-muted">
-                      <Building2 className="h-6 w-6 text-muted-foreground" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Offered by</p>
-                    <p className="font-semibold">
-                      {company.full_name || "Unknown Company"}
-                    </p>
+                <CardContent className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border border-border">
+                      <AvatarImage
+                        src={company.logo_url || undefined}
+                        alt={company.full_name || "Company"}
+                      />
+                      <AvatarFallback className="bg-muted">
+                        <Building2 className="h-6 w-6 text-muted-foreground" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Offered by</p>
+                      <p className="font-semibold">
+                        {company.full_name || "Unknown Company"}
+                      </p>
+                    </div>
                   </div>
+                  <CompanyFollowButton companyId={promotion.company_id} size="sm" />
                 </CardContent>
               </Card>
             )}
