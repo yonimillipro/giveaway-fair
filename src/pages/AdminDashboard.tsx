@@ -49,6 +49,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface User {
   id: string;
@@ -129,6 +130,10 @@ const AdminDashboard = () => {
     full_name: "",
     role: "",
     logo_url: "",
+    youtube_url: "",
+    instagram_url: "",
+    twitter_url: "",
+    tiktok_url: "",
   });
   const [selectedUserLogo, setSelectedUserLogo] = useState<File | null>(null);
   const [uploadingUserLogo, setUploadingUserLogo] = useState(false);
@@ -796,10 +801,10 @@ const AdminDashboard = () => {
   const handleEditUser = async (user: User) => {
     setEditingUser(user);
     
-    // Fetch current logo_url for the user
+    // Fetch current profile data including logo and social links
     const { data: profileData } = await supabase
       .from("profiles")
-      .select("logo_url")
+      .select("logo_url, youtube_url, instagram_url, twitter_url, tiktok_url")
       .eq("id", user.id)
       .single();
     
@@ -807,6 +812,10 @@ const AdminDashboard = () => {
       full_name: user.full_name || "",
       role: user.role,
       logo_url: profileData?.logo_url || "",
+      youtube_url: profileData?.youtube_url || "",
+      instagram_url: profileData?.instagram_url || "",
+      twitter_url: profileData?.twitter_url || "",
+      tiktok_url: profileData?.tiktok_url || "",
     });
     setSelectedUserLogo(null);
     setIsUserDialogOpen(true);
@@ -858,6 +867,10 @@ const AdminDashboard = () => {
             full_name: userFormData.full_name,
             role: userFormData.role,
             logo_url: logoUrl,
+            youtube_url: userFormData.youtube_url,
+            instagram_url: userFormData.instagram_url,
+            twitter_url: userFormData.twitter_url,
+            tiktok_url: userFormData.tiktok_url,
           }),
         }
       );
@@ -1048,10 +1061,11 @@ const AdminDashboard = () => {
                 <span className="hidden xs:inline">Create</span> Company
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Create Company Account</DialogTitle>
               </DialogHeader>
+              <ScrollArea className="max-h-[70vh] pr-4">
               <form onSubmit={handleCreateCompany} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="company_email">Email *</Label>
@@ -1184,6 +1198,7 @@ const AdminDashboard = () => {
                   {uploadingLogo ? "Creating..." : "Create Company"}
                 </Button>
               </form>
+              </ScrollArea>
             </DialogContent>
           </Dialog>
 
@@ -1992,10 +2007,11 @@ const AdminDashboard = () => {
 
         {/* Edit User Dialog */}
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Edit User</DialogTitle>
             </DialogHeader>
+            <ScrollArea className="max-h-[70vh] pr-4">
             <form onSubmit={handleSaveUser} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="user_email">Email</Label>
@@ -2040,40 +2056,101 @@ const AdminDashboard = () => {
               </div>
               {/* Company Logo - Only show for company role */}
               {(userFormData.role === "company" || editingUser?.role === "company") && (
-                <div className="space-y-2">
-                  <Label htmlFor="user_logo">Company Logo</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      id="user_logo"
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setSelectedUserLogo(file);
-                        }
-                      }}
-                      className="flex-1"
-                    />
-                    <Upload className="w-4 h-4 text-muted-foreground" />
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="user_logo">Company Logo</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="user_logo"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setSelectedUserLogo(file);
+                          }
+                        }}
+                        className="flex-1"
+                      />
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    {selectedUserLogo && (
+                      <p className="text-sm text-muted-foreground">
+                        Selected: {selectedUserLogo.name}
+                      </p>
+                    )}
+                    {!selectedUserLogo && userFormData.logo_url && (
+                      <p className="text-sm text-muted-foreground">
+                        Current logo: {userFormData.logo_url.substring(0, 40)}...
+                      </p>
+                    )}
                   </div>
-                  {selectedUserLogo && (
-                    <p className="text-sm text-muted-foreground">
-                      Selected: {selectedUserLogo.name}
+                  
+                  {/* Social Media Links Section */}
+                  <div className="space-y-3 border-t pt-4">
+                    <Label className="text-sm font-semibold">Social Media Links (Optional)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Update company social media links for giveaway entry requirements.
                     </p>
-                  )}
-                  {!selectedUserLogo && userFormData.logo_url && (
-                    <p className="text-sm text-muted-foreground">
-                      Current logo: {userFormData.logo_url.substring(0, 40)}...
-                    </p>
-                  )}
-                </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label htmlFor="user_youtube_url" className="text-xs">YouTube</Label>
+                        <Input
+                          id="user_youtube_url"
+                          type="url"
+                          value={userFormData.youtube_url}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, youtube_url: e.target.value })
+                          }
+                          placeholder="https://youtube.com/@channel"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="user_instagram_url" className="text-xs">Instagram</Label>
+                        <Input
+                          id="user_instagram_url"
+                          type="url"
+                          value={userFormData.instagram_url}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, instagram_url: e.target.value })
+                          }
+                          placeholder="https://instagram.com/username"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="user_twitter_url" className="text-xs">Twitter/X</Label>
+                        <Input
+                          id="user_twitter_url"
+                          type="url"
+                          value={userFormData.twitter_url}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, twitter_url: e.target.value })
+                          }
+                          placeholder="https://twitter.com/username"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="user_tiktok_url" className="text-xs">TikTok</Label>
+                        <Input
+                          id="user_tiktok_url"
+                          type="url"
+                          value={userFormData.tiktok_url}
+                          onChange={(e) =>
+                            setUserFormData({ ...userFormData, tiktok_url: e.target.value })
+                          }
+                          placeholder="https://tiktok.com/@username"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
               <Button type="submit" className="w-full" disabled={uploadingUserLogo}>
                 <Save className="w-4 h-4 mr-2" />
                 {uploadingUserLogo ? "Saving..." : "Save Changes"}
               </Button>
             </form>
+            </ScrollArea>
           </DialogContent>
         </Dialog>
       </main>
