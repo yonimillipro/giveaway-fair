@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Building2, Calendar, Package, Tag } from "lucide-react";
+import { ArrowLeft, Building2, Calendar, Package, Tag, Share2, Link, Twitter, Facebook, Linkedin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CompanyFollowButton } from "@/components/CompanyFollowButton";
+import { toast } from "sonner";
 
 interface Promotion {
   id: string;
@@ -105,6 +106,30 @@ const PromotionDetail = () => {
     const start = new Date(promotion.start_date);
     const end = new Date(promotion.end_date);
     return now >= start && now <= end && promotion.status === "active";
+  };
+
+  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const shareText = promotion ? `Check out this promotion: ${promotion.name} - ${promotion.discount_percentage}% OFF!` : "";
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleShareTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, "_blank");
+  };
+
+  const handleShareFacebook = () => {
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, "_blank");
+  };
+
+  const handleShareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`, "_blank");
   };
 
   if (loading) {
@@ -212,6 +237,26 @@ const PromotionDetail = () => {
                 Valid from {new Date(promotion.start_date).toLocaleDateString()}{" "}
                 to {new Date(promotion.end_date).toLocaleDateString()}
               </span>
+            </div>
+
+            {/* Share Buttons */}
+            <div className="flex items-center gap-2 pt-2">
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Share2 className="h-4 w-4" />
+                Share:
+              </span>
+              <Button variant="outline" size="icon" onClick={handleShareTwitter} title="Share on X/Twitter">
+                <Twitter className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleShareFacebook} title="Share on Facebook">
+                <Facebook className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleShareLinkedIn} title="Share on LinkedIn">
+                <Linkedin className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleCopyLink} title="Copy link">
+                <Link className="h-4 w-4" />
+              </Button>
             </div>
 
             {/* Company Info */}
