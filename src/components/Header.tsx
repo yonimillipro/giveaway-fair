@@ -104,7 +104,7 @@ const Header = () => {
               <Button
                 onClick={() => navigate("/auth")}
                 size="sm"
-                className="shadow-glow/30"
+                className="hidden sm:flex shadow-glow/30"
               >
                 Sign In
               </Button>
