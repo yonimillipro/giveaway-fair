@@ -53,7 +53,7 @@ serve(async (req) => {
     }
 
     // Get update data from request
-    const { user_id, full_name, role, logo_url } = await req.json()
+    const { user_id, full_name, role, logo_url, youtube_url, instagram_url, twitter_url, tiktok_url } = await req.json()
 
     if (!user_id) {
       return new Response(
@@ -62,13 +62,21 @@ serve(async (req) => {
       )
     }
 
-    console.log('Updating user:', user_id, { full_name, role, logo_url })
+    console.log('Updating user:', user_id, { full_name, role, logo_url, youtube_url, instagram_url, twitter_url, tiktok_url })
 
-    // Update profile if full_name or logo_url is provided
-    if (full_name !== undefined || logo_url !== undefined) {
+    // Update profile if any profile field is provided
+    const hasProfileUpdates = full_name !== undefined || logo_url !== undefined || 
+      youtube_url !== undefined || instagram_url !== undefined || 
+      twitter_url !== undefined || tiktok_url !== undefined
+
+    if (hasProfileUpdates) {
       const updateData: any = {}
       if (full_name !== undefined) updateData.full_name = full_name
       if (logo_url !== undefined) updateData.logo_url = logo_url
+      if (youtube_url !== undefined) updateData.youtube_url = youtube_url
+      if (instagram_url !== undefined) updateData.instagram_url = instagram_url
+      if (twitter_url !== undefined) updateData.twitter_url = twitter_url
+      if (tiktok_url !== undefined) updateData.tiktok_url = tiktok_url
 
       const { error: profileError } = await supabaseClient
         .from('profiles')
