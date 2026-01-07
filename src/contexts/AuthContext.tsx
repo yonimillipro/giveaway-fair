@@ -55,6 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    // Track if this is the initial session check
+    let isInitialSession = true;
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
@@ -65,13 +68,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(async () => {
             const role = await fetchUserRole(session.user.id);
             
-            // Redirect on SIGNED_IN event (covers Google OAuth callback)
-            if (event === 'SIGNED_IN') {
+            // Only redirect on actual sign-in, not on page refresh/return from external link
+            // INITIAL_SESSION means session was restored from storage (page load/return)
+            // SIGNED_IN with isInitialSession=false means fresh login
+            if (event === 'SIGNED_IN' && !isInitialSession) {
               redirectByRole(role);
             }
+            
+            // After first auth state change, mark as not initial
+            isInitialSession = false;
           }, 0);
         } else {
           setUserRole(null);
+          isInitialSession = false;
         }
       }
     );
