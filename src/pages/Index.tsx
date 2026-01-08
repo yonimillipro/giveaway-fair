@@ -99,7 +99,7 @@ const Index = () => {
             .from("profiles")
             .select("logo_url, full_name")
             .eq("id", giveaway.company_id)
-            .single();
+            .maybeSingle();
 
           return {
             ...giveaway,

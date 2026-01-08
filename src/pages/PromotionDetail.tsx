@@ -69,7 +69,7 @@ const PromotionDetail = () => {
           .from("profiles")
           .select("full_name, logo_url")
           .eq("id", promoData.company_id)
-          .single();
+          .maybeSingle();
 
         setCompany(companyData);
       }
