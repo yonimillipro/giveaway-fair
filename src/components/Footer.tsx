@@ -8,17 +8,17 @@ const Footer = () => {
     product: [
       { name: "Giveaways", href: "/" },
       { name: "Promotions", href: "/promotions" },
-      { name: "How it Works", href: "#" },
+      { name: "How it Works", href: "/how-it-works" },
     ],
     company: [
-      { name: "About Us", href: "#" },
-      { name: "Contact", href: "#" },
-      { name: "Careers", href: "#" },
+      { name: "About Us", href: "/about" },
+      { name: "Contact", href: "/contact" },
+      { name: "Careers", href: "/careers" },
     ],
     legal: [
-      { name: "Privacy Policy", href: "#" },
-      { name: "Terms of Service", href: "#" },
-      { name: "Cookie Policy", href: "#" },
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Cookie Policy", href: "/cookies" },
     ],
   };
 
@@ -95,6 +95,10 @@ const Footer = () => {
                 <li key={link.name}>
                   <a
                     href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(link.href);
+                    }}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.name}
@@ -112,6 +116,10 @@ const Footer = () => {
                 <li key={link.name}>
                   <a
                     href={link.href}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(link.href);
+                    }}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     {link.name}

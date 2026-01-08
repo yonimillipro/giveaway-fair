@@ -17,6 +17,13 @@ import PromotionDetail from "./pages/PromotionDetail";
 import GiveawayDetail from "./pages/GiveawayDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import HowItWorks from "./pages/HowItWorks";
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import CookiePolicy from "./pages/CookiePolicy";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +42,13 @@ const App = () => (
               <Route path="/promotions" element={<Promotions />} />
               <Route path="/promotion/:id" element={<PromotionDetail />} />
               <Route path="/giveaway/:id" element={<GiveawayDetail />} />
+              <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
               <Route
                 path="/profile"
                 element={
