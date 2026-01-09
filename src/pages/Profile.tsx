@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
-import { ArrowLeft, Upload, Save, User, Mail, Calendar, Shield } from "lucide-react";
+import { ArrowLeft, Upload, Save, User, Mail, Calendar, Shield, Settings } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { format } from "date-fns";
+import CookiePreferences from "@/components/CookiePreferences";
 
 interface ProfileData {
   id: string;
@@ -247,6 +248,15 @@ const Profile = () => {
             </form>
           </CardContent>
         </Card>
+
+        {/* Settings Section */}
+        <div className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings className="w-5 h-5 text-muted-foreground" />
+            <h2 className="text-lg font-semibold">Settings</h2>
+          </div>
+          <CookiePreferences />
+        </div>
       </main>
     </div>
   );
