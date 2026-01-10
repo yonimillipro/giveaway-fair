@@ -7,7 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { HelpCircle, Gift, Trophy, Shield, CreditCard, Users, Mail } from "lucide-react";
+import { HelpCircle, Gift, Trophy, Shield, CreditCard, Users, Mail, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
@@ -206,6 +206,56 @@ const FAQ = () => {
               </Card>
             ))}
           </div>
+        </section>
+
+        {/* Telegram Community Section */}
+        <section className="py-12 md:py-16 container mx-auto px-4">
+          <Card className="max-w-4xl mx-auto border-2 border-[hsl(200,80%,50%)]/30 bg-gradient-to-br from-[hsl(200,80%,50%)]/5 to-[hsl(200,80%,60%)]/10 overflow-hidden">
+            <CardContent className="p-8 md:p-10">
+              <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                <div className="flex-shrink-0 p-4 rounded-2xl bg-[hsl(200,80%,50%)] text-white shadow-lg">
+                  <MessageCircle className="w-10 h-10" />
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <h2 className="text-2xl font-bold mb-2">Join Our Telegram Community</h2>
+                  <p className="text-muted-foreground mb-4 max-w-xl">
+                    Connect with thousands of giveaway enthusiasts! Get instant notifications about new giveaways, 
+                    exclusive tips, winner announcements, and chat directly with our community members and support team.
+                  </p>
+                  <ul className="flex flex-wrap justify-center md:justify-start gap-4 text-sm text-muted-foreground mb-6">
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[hsl(200,80%,50%)]" />
+                      Instant giveaway alerts
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[hsl(200,80%,50%)]" />
+                      Winner announcements
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[hsl(200,80%,50%)]" />
+                      Community support
+                    </li>
+                    <li className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[hsl(200,80%,50%)]" />
+                      Exclusive tips
+                    </li>
+                  </ul>
+                </div>
+                <div className="flex-shrink-0">
+                  <Button 
+                    asChild 
+                    size="lg" 
+                    className="bg-[hsl(200,80%,50%)] hover:bg-[hsl(200,80%,45%)] text-white font-semibold gap-2"
+                  >
+                    <a href="https://t.me/GiveawayHubCommunity" target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="w-5 h-5" />
+                      Join Telegram
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Still Have Questions CTA */}
