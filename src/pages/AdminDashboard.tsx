@@ -45,6 +45,8 @@ import {
   Save,
   Percent,
   Package,
+  Search,
+  X,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
@@ -188,6 +190,12 @@ const AdminDashboard = () => {
     product_image_url: "",
   });
 
+  // Search/Filter state
+  const [giveawaySearch, setGiveawaySearch] = useState("");
+  const [promotionSearch, setPromotionSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
+
   const resetGiveawayForm = () => {
     setGiveawayFormData({
       company_id: "",
@@ -223,6 +231,32 @@ const AdminDashboard = () => {
     setSelectedPromotionImage(null);
     setEditingPromotion(null);
   };
+
+  // Filtered data based on search
+  const filteredGiveaways = giveaways.filter((g) => {
+    const searchLower = giveawaySearch.toLowerCase();
+    return (
+      g.title.toLowerCase().includes(searchLower) ||
+      g.company_name.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const filteredPromotions = promotions.filter((p) => {
+    const searchLower = promotionSearch.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(searchLower) ||
+      (p.description?.toLowerCase().includes(searchLower) ?? false)
+    );
+  });
+
+  const filteredUsers = users.filter((u) => {
+    const searchLower = userSearch.toLowerCase();
+    const matchesSearch =
+      u.email.toLowerCase().includes(searchLower) ||
+      u.full_name.toLowerCase().includes(searchLower);
+    const matchesRole = userRoleFilter === "all" || u.role === userRoleFilter;
+    return matchesSearch && matchesRole;
+  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -1770,16 +1804,37 @@ const AdminDashboard = () => {
         {/* Giveaways Table (CRUD - R, U, D) */}
         <Card className="mb-4 sm:mb-8">
           <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-sm sm:text-lg">All Giveaways</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-sm sm:text-lg">All Giveaways</CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search giveaways..."
+                  value={giveawaySearch}
+                  onChange={(e) => setGiveawaySearch(e.target.value)}
+                  className="pl-8 pr-8 h-8 text-sm"
+                />
+                {giveawaySearch && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setGiveawaySearch("")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-0">
             {loading ? (
               <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
                 Loading giveaways...
               </p>
-            ) : giveaways.length === 0 ? (
+            ) : filteredGiveaways.length === 0 ? (
               <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
-                No giveaways found.
+                {giveawaySearch ? "No giveaways match your search." : "No giveaways found."}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -1796,7 +1851,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {giveaways.map((giveaway) => (
+                    {filteredGiveaways.map((giveaway) => (
                       <TableRow key={giveaway.id}>
                         <TableCell className="font-medium text-[10px] sm:text-sm max-w-[80px] sm:max-w-none truncate">
                           {giveaway.title}
@@ -1852,16 +1907,37 @@ const AdminDashboard = () => {
         {/* Promotions Table */}
         <Card className="mb-4 sm:mb-8">
           <CardHeader className="p-3 sm:p-6">
-            <CardTitle className="text-sm sm:text-lg">All Promotions</CardTitle>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-sm sm:text-lg">All Promotions</CardTitle>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search promotions..."
+                  value={promotionSearch}
+                  onChange={(e) => setPromotionSearch(e.target.value)}
+                  className="pl-8 pr-8 h-8 text-sm"
+                />
+                {promotionSearch && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setPromotionSearch("")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-0">
             {loading ? (
               <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
                 Loading promotions...
               </p>
-            ) : promotions.length === 0 ? (
+            ) : filteredPromotions.length === 0 ? (
               <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
-                No promotions found. Click "Promotion" to add one.
+                {promotionSearch ? "No promotions match your search." : "No promotions found. Click \"Promotion\" to add one."}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -1877,7 +1953,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {promotions.map((promotion) => {
+                    {filteredPromotions.map((promotion) => {
                       const now = new Date();
                       const startDate = new Date(promotion.start_date);
                       const endDate = new Date(promotion.end_date);
@@ -1939,13 +2015,51 @@ const AdminDashboard = () => {
 
         {/* Users Table */}
         <Card>
-          <CardHeader>
-            <CardTitle>All Users</CardTitle>
+          <CardHeader className="p-3 sm:p-6">
+            <div className="flex flex-col gap-3">
+              <CardTitle className="text-sm sm:text-lg">All Users</CardTitle>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by email or name..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    className="pl-8 pr-8 h-8 text-sm"
+                  />
+                  {userSearch && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0.5 top-1/2 -translate-y-1/2 h-7 w-7"
+                      onClick={() => setUserSearch("")}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                  <SelectTrigger className="w-full sm:w-32 h-8 text-sm">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="company">Company</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
             {loading ? (
               <p className="text-center text-muted-foreground py-4">
                 Loading users...
+              </p>
+            ) : filteredUsers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                {userSearch || userRoleFilter !== "all" ? "No users match your filters." : "No users found."}
               </p>
             ) : (
               <div className="overflow-x-auto">
@@ -1960,7 +2074,7 @@ const AdminDashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
+                    {filteredUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>{user.full_name}</TableCell>
