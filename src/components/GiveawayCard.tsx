@@ -145,7 +145,7 @@ export const GiveawayCard = ({
       />
 
       {/* Card Content */}
-      <Card className="relative z-10 w-full h-full flex flex-col transition-all duration-300 overflow-hidden">
+      <Card className="relative z-10 w-full h-full flex flex-col transition-all duration-300 overflow-hidden shadow-md dark:shadow-none">
         {/* Image Section with Carousel */}
         <div className="aspect-[4/3] sm:aspect-video w-full overflow-hidden bg-muted relative">
           {allImages.length > 0 ? (

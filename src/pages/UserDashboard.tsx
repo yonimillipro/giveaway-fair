@@ -227,7 +227,7 @@ const UserDashboard = () => {
         <PromotionCarousel autoScrollInterval={4000} />
 
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
-          <Card className="shadow-lg">
+          <Card className="shadow-md hover:shadow-lg transition-shadow dark:shadow-none">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-sm font-medium">
                 Entries
@@ -242,7 +242,7 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-md hover:shadow-lg transition-shadow dark:shadow-none">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-sm font-medium">
                 Active
@@ -257,7 +257,7 @@ const UserDashboard = () => {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-md hover:shadow-lg transition-shadow dark:shadow-none">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
               <CardTitle className="text-[10px] sm:text-sm font-medium">
                 Wins
