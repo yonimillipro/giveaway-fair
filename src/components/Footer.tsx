@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Gift, Twitter, Instagram, Facebook, Mail } from "lucide-react";
+import { Gift, Twitter, Instagram, Facebook, Mail, Send, Users } from "lucide-react";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -51,7 +51,7 @@ const Footer = () => {
               incredible prizes!
             </p>
             {/* Social Links */}
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-4">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -63,6 +63,27 @@ const Footer = () => {
                 </a>
               ))}
             </div>
+
+            {/* Telegram Community Banner */}
+            <a
+              href="https://t.me/GiveawayHubCommunity"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex items-center gap-2 px-3 py-2 rounded-lg bg-[hsl(200,80%,50%)]/10 hover:bg-[hsl(200,80%,50%)]/20 border border-[hsl(200,80%,50%)]/20 hover:border-[hsl(200,80%,50%)]/40 transition-all duration-300"
+            >
+              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-[hsl(200,80%,50%)] text-white group-hover:scale-110 transition-transform">
+                <Send className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-foreground group-hover:text-[hsl(200,80%,45%)] transition-colors">
+                  Join Our Community
+                </span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  <Users className="w-2.5 h-2.5" />
+                  Connect on Telegram
+                </span>
+              </div>
+            </a>
           </div>
 
           {/* Product Links */}
