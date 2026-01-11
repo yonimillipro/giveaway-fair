@@ -12,11 +12,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface Giveaway {
   id: string;
@@ -275,10 +274,10 @@ const UserDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Mobile: Dropdown Menu */}
+          {/* Mobile: Popup Menu */}
           {isMobile ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Popover>
+              <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-between h-10 mb-4">
                   <span className="flex items-center gap-2">
                     {activeTab === "all-giveaways" ? (
@@ -295,24 +294,26 @@ const UserDashboard = () => {
                   </span>
                   <ChevronDown className="h-4 w-4 opacity-50" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[calc(100vw-1.5rem)] bg-popover" align="start">
-                <DropdownMenuItem
+              </PopoverTrigger>
+              <PopoverContent className="w-[calc(100vw-1.5rem)] p-1" align="start">
+                <Button
+                  variant={activeTab === "all-giveaways" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
                   onClick={() => setActiveTab("all-giveaways")}
-                  className={activeTab === "all-giveaways" ? "bg-accent" : ""}
                 >
                   <Gift className="h-4 w-4 mr-2" />
                   Giveaways
-                </DropdownMenuItem>
-                <DropdownMenuItem
+                </Button>
+                <Button
+                  variant={activeTab === "my-entries" ? "secondary" : "ghost"}
+                  className="w-full justify-start"
                   onClick={() => setActiveTab("my-entries")}
-                  className={activeTab === "my-entries" ? "bg-accent" : ""}
                 >
                   <Trophy className="h-4 w-4 mr-2" />
                   My Entries
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </Button>
+              </PopoverContent>
+            </Popover>
           ) : (
             /* Desktop: Regular Tabs */
             <div className="flex gap-2 mb-6">
