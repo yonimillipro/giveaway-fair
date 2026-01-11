@@ -6,11 +6,17 @@ import { GiveawayCard } from "@/components/GiveawayCard";
 import { PromotionCarousel } from "@/components/PromotionCarousel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LogOut, Trophy, Users, Gift, Tag } from "lucide-react";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { LogOut, Trophy, Users, Gift, ChevronDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Badge } from "@/components/ui/badge";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Giveaway {
   id: string;
@@ -42,6 +48,8 @@ const UserDashboard = () => {
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [myEntries, setMyEntries] = useState<Giveaway[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all-giveaways");
+  const isMobile = useIsMobile();
 
   const fetchGiveaways = useCallback(async () => {
     try {
@@ -266,13 +274,68 @@ const UserDashboard = () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="all-giveaways" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md sm:max-w-lg h-9 sm:h-10">
-            <TabsTrigger value="all-giveaways" className="text-xs sm:text-sm">Giveaways</TabsTrigger>
-            <TabsTrigger value="my-entries" className="text-xs sm:text-sm">My Entries</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          {/* Mobile: Dropdown Menu */}
+          {isMobile ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between h-10 mb-4">
+                  <span className="flex items-center gap-2">
+                    {activeTab === "all-giveaways" ? (
+                      <>
+                        <Gift className="h-4 w-4" />
+                        Giveaways
+                      </>
+                    ) : (
+                      <>
+                        <Trophy className="h-4 w-4" />
+                        My Entries
+                      </>
+                    )}
+                  </span>
+                  <ChevronDown className="h-4 w-4 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[calc(100vw-1.5rem)] bg-popover" align="start">
+                <DropdownMenuItem
+                  onClick={() => setActiveTab("all-giveaways")}
+                  className={activeTab === "all-giveaways" ? "bg-accent" : ""}
+                >
+                  <Gift className="h-4 w-4 mr-2" />
+                  Giveaways
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setActiveTab("my-entries")}
+                  className={activeTab === "my-entries" ? "bg-accent" : ""}
+                >
+                  <Trophy className="h-4 w-4 mr-2" />
+                  My Entries
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            /* Desktop: Regular Tabs */
+            <div className="flex gap-2 mb-6">
+              <Button
+                variant={activeTab === "all-giveaways" ? "default" : "outline"}
+                onClick={() => setActiveTab("all-giveaways")}
+                className="flex items-center gap-2"
+              >
+                <Gift className="h-4 w-4" />
+                Giveaways
+              </Button>
+              <Button
+                variant={activeTab === "my-entries" ? "default" : "outline"}
+                onClick={() => setActiveTab("my-entries")}
+                className="flex items-center gap-2"
+              >
+                <Trophy className="h-4 w-4" />
+                My Entries
+              </Button>
+            </div>
+          )}
 
-          <TabsContent value="all-giveaways" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+          <TabsContent value="all-giveaways" className="space-y-4 sm:space-y-6 mt-0">
             {loading ? (
               <div className="text-center py-8 sm:py-12">
                 <p className="text-sm sm:text-base text-muted-foreground">Loading giveaways...</p>
@@ -306,7 +369,7 @@ const UserDashboard = () => {
             )}
           </TabsContent>
 
-          <TabsContent value="my-entries" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+          <TabsContent value="my-entries" className="space-y-4 sm:space-y-6 mt-0">
             {myEntries.length === 0 ? (
               <div className="text-center py-8 sm:py-12">
                 <Trophy className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-muted-foreground mb-3 sm:mb-4" />
