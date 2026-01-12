@@ -84,17 +84,16 @@ const Profile = () => {
       if (selectedAvatar) {
         const fileExt = selectedAvatar.name.split(".").pop();
         const fileName = `${user.id}-${Date.now()}.${fileExt}`;
-        const filePath = `avatars/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
-          .from("giveaway-images")
-          .upload(filePath, selectedAvatar);
+          .from("avatars")
+          .upload(fileName, selectedAvatar, { upsert: true });
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
-          .from("giveaway-images")
-          .getPublicUrl(filePath);
+          .from("avatars")
+          .getPublicUrl(fileName);
 
         avatarUrl = publicUrl;
       }
