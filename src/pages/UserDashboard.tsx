@@ -11,6 +11,7 @@ import { LogOut, Trophy, Users, Gift, ChevronDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Popover,
   PopoverContent,
@@ -48,7 +49,21 @@ const UserDashboard = () => {
   const [myEntries, setMyEntries] = useState<Giveaway[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all-giveaways");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const isMobile = useIsMobile();
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      setAvatarUrl(data?.avatar_url || null);
+    };
+    fetchAvatar();
+  }, [user]);
 
   const fetchGiveaways = useCallback(async () => {
     try {
@@ -214,6 +229,19 @@ const UserDashboard = () => {
               {user?.email || "User"}
             </span>
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/profile")}
+              className="rounded-full p-0.5 h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
+                <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
               <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Sign Out</span>

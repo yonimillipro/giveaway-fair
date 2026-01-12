@@ -396,37 +396,50 @@ const GiveawayDetail = () => {
             </div>
 
             {/* Details Section */}
-            <div className="space-y-6">
-              {/* Price Badge and Like */}
-              <div className="flex items-center gap-3">
-                {giveaway.prize_value && (
-                  <>
-                    <span className="text-3xl md:text-4xl font-bold text-primary">
-                      ${giveaway.prize_value.toLocaleString()}
-                    </span>
-                    <span className="text-lg text-muted-foreground">
-                      Prize Value
-                    </span>
-                  </>
-                )}
-                <button 
-                  onClick={handleLike}
-                  disabled={likingInProgress}
-                  className={`ml-auto p-2 hover:bg-muted rounded-full transition-colors flex items-center gap-1.5 ${hasLiked ? 'text-red-500' : ''}`}
-                >
-                  <Heart className={`w-6 h-6 ${hasLiked ? 'fill-current' : ''}`} />
-                  <span className="text-sm font-medium">{likesCount}</span>
-                </button>
-              </div>
+            <div className="space-y-5">
+              {/* Prize Value */}
+              {giveaway.prize_value && (
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl md:text-4xl font-bold text-primary">
+                    ${giveaway.prize_value.toLocaleString()}
+                  </span>
+                  <span className="text-base text-muted-foreground">
+                    Prize Value
+                  </span>
+                </div>
+              )}
 
               {/* Title */}
               <h1 className="text-2xl md:text-3xl font-bold leading-tight">
                 {giveaway.title}
               </h1>
 
+              {/* Action Bar - Like & Share */}
+              <div className="flex items-center gap-2 py-2 border-y border-border/50">
+                <button 
+                  onClick={handleLike}
+                  disabled={likingInProgress}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                    hasLiked 
+                      ? 'bg-red-500/10 text-red-500' 
+                      : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${hasLiked ? 'fill-current' : ''}`} />
+                  <span className="text-sm font-medium">{likesCount}</span>
+                </button>
+                <button 
+                  onClick={handleShare}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span className="text-sm font-medium">Share</span>
+                </button>
+              </div>
+
               {/* Description */}
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
                   {giveaway.description}
                 </p>
               </div>
@@ -495,27 +508,27 @@ const GiveawayDetail = () => {
                 />
               )}
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              {/* Join Button */}
+              <div className="pt-2">
                 {hasJoined ? (
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="flex-1"
+                    className="w-full"
                     disabled
                   >
                     <CheckCircle className="w-5 h-5 mr-2" />
                     Already Joined
                   </Button>
                 ) : isEnded ? (
-                  <Button size="lg" variant="secondary" className="flex-1" disabled>
+                  <Button size="lg" variant="secondary" className="w-full" disabled>
                     Giveaway Ended
                   </Button>
                 ) : !allRequirementsMet ? (
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="flex-1"
+                    className="w-full"
                     disabled
                   >
                     <Lock className="w-5 h-5 mr-2" />
@@ -524,23 +537,13 @@ const GiveawayDetail = () => {
                 ) : (
                   <Button
                     size="lg"
-                    className="flex-1 shadow-glow"
+                    className="w-full shadow-glow"
                     onClick={handleJoin}
                     disabled={joining}
                   >
                     {joining ? "Joining..." : "Join Giveaway"}
                   </Button>
                 )}
-
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={handleShare}
-                  className="sm:w-auto"
-                >
-                  <Share2 className="w-5 h-5 mr-2" />
-                  Share
-                </Button>
               </div>
 
               {/* Additional Info */}

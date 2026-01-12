@@ -1,15 +1,34 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { LogOut, Gift, UserCircle, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { LogOut, Gift, Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { supabase } from "@/integrations/supabase/client";
 
 const Header = () => {
   const { user, userRole, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAvatar = async () => {
+      if (!user) {
+        setAvatarUrl(null);
+        return;
+      }
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      setAvatarUrl(data?.avatar_url || null);
+    };
+    fetchAvatar();
+  }, [user]);
 
   const getNavLinks = () => {
     const links: { name: string; path: string }[] = [];
@@ -80,15 +99,20 @@ const Header = () => {
           <div className="flex items-center gap-2">
             <ThemeToggle />
 
-            {user ? (
+          {user ? (
               <>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => navigate("/profile")}
-                  className="hidden md:inline-flex"
+                  className="rounded-full p-0.5"
                 >
-                  <UserCircle className="w-5 h-5" />
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-medium">
+                      {user.email?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
                 <Button
                   onClick={handleSignOut}
@@ -159,7 +183,12 @@ const Header = () => {
                       }}
                       className="w-full justify-start gap-2"
                     >
-                      <UserCircle className="w-5 h-5" />
+                      <Avatar className="h-5 w-5">
+                        <AvatarImage src={avatarUrl || undefined} alt="Profile" />
+                        <AvatarFallback className="bg-primary/10 text-primary text-[10px] font-medium">
+                          {user.email?.charAt(0).toUpperCase() || "U"}
+                        </AvatarFallback>
+                      </Avatar>
                       Profile
                     </Button>
                     <Button
