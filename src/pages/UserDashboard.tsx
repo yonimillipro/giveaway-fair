@@ -7,16 +7,11 @@ import { PromotionCarousel } from "@/components/PromotionCarousel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { LogOut, Trophy, Users, Gift, ChevronDown } from "lucide-react";
+import { LogOut, Trophy, Users, Gift } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DashboardHamburgerMenu } from "@/components/DashboardHamburgerMenu";
 
 interface Giveaway {
   id: string;
@@ -50,7 +45,6 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all-giveaways");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -220,12 +214,17 @@ const UserDashboard = () => {
   const totalEntries = myEntries.length;
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-card border-b shadow-sm">
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Sticky Promotion Banner */}
+      <div className="sticky top-0 z-40 bg-background">
+        <PromotionCarousel autoScrollInterval={4000} />
+      </div>
+
+      <header className="bg-card border-b shadow-sm sticky top-0 z-30">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
           <h1 className="text-lg sm:text-2xl font-bold text-primary">Dashboard</h1>
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <span className="text-xs sm:text-sm font-medium text-muted-foreground hidden sm:inline truncate max-w-[150px]">
+            <span className="text-xs sm:text-sm font-medium text-muted-foreground hidden md:inline truncate max-w-[150px]">
               {user?.email || "User"}
             </span>
             <ThemeToggle />
@@ -242,18 +241,17 @@ const UserDashboard = () => {
                 </AvatarFallback>
               </Avatar>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSignOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
+            <Button variant="outline" size="sm" onClick={handleSignOut} className="hidden sm:flex h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
               <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
+            {/* Hamburger Menu */}
+            <DashboardHamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl">
-        {/* Promotion Carousel at the top */}
-        <PromotionCarousel autoScrollInterval={4000} />
-
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl flex-1">
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
           <Card className="shadow-md hover:shadow-lg transition-shadow dark:shadow-none">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 p-2.5 sm:p-4 pb-1 sm:pb-2">
@@ -302,67 +300,27 @@ const UserDashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          {/* Mobile: Popup Menu */}
-          {isMobile ? (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between h-10 mb-4">
-                  <span className="flex items-center gap-2">
-                    {activeTab === "all-giveaways" ? (
-                      <>
-                        <Gift className="h-4 w-4" />
-                        Giveaways
-                      </>
-                    ) : (
-                      <>
-                        <Trophy className="h-4 w-4" />
-                        My Entries
-                      </>
-                    )}
-                  </span>
-                  <ChevronDown className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[calc(100vw-1.5rem)] p-1" align="start">
-                <Button
-                  variant={activeTab === "all-giveaways" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("all-giveaways")}
-                >
-                  <Gift className="h-4 w-4 mr-2" />
-                  Giveaways
-                </Button>
-                <Button
-                  variant={activeTab === "my-entries" ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab("my-entries")}
-                >
-                  <Trophy className="h-4 w-4 mr-2" />
-                  My Entries
-                </Button>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            /* Desktop: Regular Tabs */
-            <div className="flex gap-2 mb-6">
-              <Button
-                variant={activeTab === "all-giveaways" ? "default" : "outline"}
-                onClick={() => setActiveTab("all-giveaways")}
-                className="flex items-center gap-2"
-              >
-                <Gift className="h-4 w-4" />
-                Giveaways
-              </Button>
-              <Button
-                variant={activeTab === "my-entries" ? "default" : "outline"}
-                onClick={() => setActiveTab("my-entries")}
-                className="flex items-center gap-2"
-              >
-                <Trophy className="h-4 w-4" />
-                My Entries
-              </Button>
-            </div>
-          )}
+          {/* Tab Buttons - visible on all screens */}
+          <div className="flex gap-2 mb-6">
+            <Button
+              variant={activeTab === "all-giveaways" ? "default" : "outline"}
+              onClick={() => setActiveTab("all-giveaways")}
+              className="flex items-center gap-2"
+            >
+              <Gift className="h-4 w-4" />
+              <span className="hidden sm:inline">Giveaways</span>
+              <span className="sm:hidden">All</span>
+            </Button>
+            <Button
+              variant={activeTab === "my-entries" ? "default" : "outline"}
+              onClick={() => setActiveTab("my-entries")}
+              className="flex items-center gap-2"
+            >
+              <Trophy className="h-4 w-4" />
+              <span className="hidden sm:inline">My Entries</span>
+              <span className="sm:hidden">Entries</span>
+            </Button>
+          </div>
 
           <TabsContent value="all-giveaways" className="space-y-4 sm:space-y-6 mt-0">
             {loading ? (
