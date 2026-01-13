@@ -25,10 +25,10 @@ import {
   Gift,
   CheckCircle,
   Eye,
-  Share2,
   Heart,
   Lock,
 } from "lucide-react";
+import { SocialShareButton } from "@/components/SocialShareButton";
 import { format, formatDistanceToNow } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 
@@ -239,18 +239,7 @@ const GiveawayDetail = () => {
     }
   };
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: giveaway?.title,
-        text: giveaway?.description,
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
-    }
-  };
+  // Share handler removed - using SocialShareButton component instead
 
   const handleBack = () => {
     // Check if there's history to go back to, otherwise go home
@@ -428,13 +417,10 @@ const GiveawayDetail = () => {
                   <Heart className={`w-5 h-5 ${hasLiked ? 'fill-current' : ''}`} />
                   <span className="text-sm font-medium">{likesCount}</span>
                 </button>
-                <button 
-                  onClick={handleShare}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="text-sm font-medium">Share</span>
-                </button>
+                <SocialShareButton 
+                  title={giveaway.title}
+                  description={giveaway.description}
+                />
               </div>
 
               {/* Description */}
