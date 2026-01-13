@@ -83,17 +83,17 @@ const Profile = () => {
       // Upload new avatar if selected
       if (selectedAvatar) {
         const fileExt = selectedAvatar.name.split(".").pop();
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from("avatars")
-          .upload(fileName, selectedAvatar, { upsert: true });
+          .upload(filePath, selectedAvatar, { upsert: true });
 
         if (uploadError) throw uploadError;
 
         const { data: { publicUrl } } = supabase.storage
           .from("avatars")
-          .getPublicUrl(fileName);
+          .getPublicUrl(filePath);
 
         avatarUrl = publicUrl;
       }
