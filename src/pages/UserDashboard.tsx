@@ -215,12 +215,10 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Sticky Promotion Banner */}
+      {/* Sticky Header + Promotion Banner Container */}
       <div className="sticky top-0 z-40 bg-background">
-        <PromotionCarousel autoScrollInterval={4000} />
-      </div>
-
-      <header className="bg-card border-b shadow-sm sticky top-0 z-30">
+        {/* Header */}
+        <header className="bg-card border-b shadow-sm">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4 flex justify-between items-center">
           <h1 className="text-lg sm:text-2xl font-bold text-primary">Dashboard</h1>
           <div className="flex items-center gap-1.5 sm:gap-2">
@@ -246,10 +244,14 @@ const UserDashboard = () => {
               <span className="hidden sm:inline">Sign Out</span>
             </Button>
             {/* Hamburger Menu */}
-            <DashboardHamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} />
+            <DashboardHamburgerMenu activeTab={activeTab} onTabChange={setActiveTab} onSignOut={handleSignOut} />
           </div>
         </div>
       </header>
+
+        {/* Promotion Carousel */}
+        <PromotionCarousel autoScrollInterval={4000} />
+      </div>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 max-w-7xl flex-1">
         <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">

@@ -14,7 +14,8 @@ import {
   Shield,
   FileText,
   Cookie,
-  Send
+  Send,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,9 +30,10 @@ import { Separator } from "@/components/ui/separator";
 interface DashboardHamburgerMenuProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onSignOut?: () => void;
 }
 
-export const DashboardHamburgerMenu = ({ activeTab, onTabChange }: DashboardHamburgerMenuProps) => {
+export const DashboardHamburgerMenu = ({ activeTab, onTabChange, onSignOut }: DashboardHamburgerMenuProps) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -61,6 +63,11 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange }: DashboardHamb
   const userLinks = [
     { name: "Profile / Settings", href: "/profile", icon: User },
   ];
+
+  const handleSignOut = () => {
+    setOpen(false);
+    onSignOut?.();
+  };
 
   const handleNavigation = (href: string) => {
     navigate(href);
@@ -123,6 +130,15 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange }: DashboardHamb
               {item.name}
             </button>
           ))}
+          {onSignOut && (
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </button>
+          )}
         </div>
 
         <Separator className="my-4" />
