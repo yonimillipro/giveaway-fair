@@ -58,14 +58,12 @@ export const GiveawayCard = ({
 
   const fetchLikes = async () => {
     try {
-      // Use secure RPC function to get like count without exposing user_ids
       const { data: countData } = await supabase
         .rpc('get_giveaway_like_count', { giveaway_uuid: id });
 
       setLikesCount(countData || 0);
 
       if (user) {
-        // Use secure RPC function to check if user has liked
         const { data: hasLikedData } = await supabase
           .rpc('user_has_liked_giveaway', { giveaway_uuid: id });
 
@@ -133,21 +131,12 @@ export const GiveawayCard = ({
 
   return (
     <div
-      className="relative rounded-xl p-[1.5px] overflow-hidden group hover:shadow-glow transition-all duration-300 w-full cursor-pointer"
+      className="relative rounded-xl overflow-hidden group cursor-pointer transition-all duration-300 hover:shadow-xl active:scale-[0.98]"
       onClick={handleClick}
     >
-      {/* Animated Border Layer */}
-      <div
-        className="absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"
-        style={{
-          background: "conic-gradient(from 0deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary)))",
-        }}
-      />
-
-      {/* Card Content */}
-      <Card className="relative z-10 w-full h-full flex flex-col transition-all duration-300 overflow-hidden shadow-md dark:shadow-none">
-        {/* Image Section with Carousel */}
-        <div className="aspect-[4/3] sm:aspect-video w-full overflow-hidden bg-muted relative">
+      <Card className="relative w-full h-full flex flex-col overflow-hidden shadow-md border-0 bg-card">
+        {/* Image Section */}
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
           {allImages.length > 0 ? (
             <Carousel className="w-full h-full" opts={{ loop: true }}>
               <CarouselContent className="h-full">
@@ -156,12 +145,11 @@ export const GiveawayCard = ({
                     <img
                       src={img}
                       alt={`${title} - ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.onerror = null;
-                        target.src =
-                          "https://placehold.co/400x225/A0A0A0/FFFFFF?text=Giveaway";
+                        target.src = "https://placehold.co/400x300/A0A0A0/FFFFFF?text=Giveaway";
                       }}
                     />
                   </CarouselItem>
@@ -169,75 +157,83 @@ export const GiveawayCard = ({
               </CarouselContent>
             </Carousel>
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-muted">
-              <Gift className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground/50" />
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/10 to-secondary/10">
+              <Gift className="w-12 h-12 text-muted-foreground/30" />
             </div>
           )}
 
+          {/* Gradient overlay for text */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+
           {/* Image count indicator */}
           {allImages.length > 1 && (
-            <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2 bg-background/80 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium z-10">
+            <div className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full text-[10px] text-white font-medium z-10">
               {allImages.length} photos
             </div>
           )}
 
+          {/* Like Button - Heart overlay on image */}
+          <button
+            onClick={handleLike}
+            disabled={likingInProgress}
+            className={`absolute top-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm px-2 py-1.5 rounded-full text-xs z-10 transition-all hover:bg-black/60 ${
+              hasLiked ? 'text-red-400' : 'text-white'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${hasLiked ? 'fill-current' : ''}`} />
+            <span className="font-medium">{likesCount}</span>
+          </button>
+
           {/* Joined Badge */}
           {hasJoined && (
-            <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-primary/90 text-primary-foreground z-10 text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">
+            <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground z-10 text-[10px] px-2 py-0.5 shadow-lg">
               Joined
             </Badge>
           )}
 
-          {/* Like Button */}
-          <button
-            onClick={handleLike}
-            disabled={likingInProgress}
-            className={`absolute top-2 left-2 sm:top-3 sm:left-3 flex items-center gap-0.5 sm:gap-1 bg-background/80 backdrop-blur-sm px-1.5 py-1 sm:px-2 sm:py-1.5 rounded-full text-[10px] sm:text-sm z-10 transition-colors hover:bg-background ${hasLiked ? 'text-red-500' : 'text-foreground'}`}
-          >
-            <Heart className={`w-3 h-3 sm:w-4 sm:h-4 ${hasLiked ? 'fill-current' : ''}`} />
-            <span className="font-medium">{likesCount}</span>
-          </button>
+          {/* Prize badge overlay on image */}
+          {prizeValue !== undefined && (
+            <Badge 
+              variant="secondary" 
+              className="absolute bottom-2 left-2 bg-white/90 text-foreground font-bold text-xs px-2 py-1 shadow-lg z-10"
+            >
+              ${prizeValue}
+            </Badge>
+          )}
         </div>
 
         {/* Details Section */}
-        <div className="p-2.5 sm:p-4 flex-1 flex flex-col">
-          {/* Title and Prize */}
-          <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-            <h2 className="line-clamp-2 text-xs sm:text-base md:text-lg font-semibold text-foreground leading-tight">
-              {title}
-            </h2>
-            {prizeValue !== undefined && (
-              <Badge variant="secondary" className="shrink-0 text-[10px] sm:text-xs py-0.5 px-1.5 sm:py-1 sm:px-2">
-                ${prizeValue}
-              </Badge>
-            )}
-          </div>
+        <div className="p-3 sm:p-4 flex-1 flex flex-col">
+          {/* Title */}
+          <h2 className="line-clamp-2 text-sm sm:text-base font-semibold text-foreground leading-tight mb-1.5">
+            {title}
+          </h2>
 
           {/* Description */}
-          <p className="text-[10px] sm:text-sm text-muted-foreground line-clamp-2 mb-2 sm:mb-3 flex-1">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 mb-3 flex-1">
             {description}
           </p>
 
-          {/* Info Row */}
-          <div className="flex flex-wrap items-center justify-between gap-x-2 sm:gap-x-4 gap-y-1 text-[10px] sm:text-sm text-muted-foreground pt-2 border-t border-border/50">
-            {/* Company Logo - Left */}
-            <Avatar className="h-6 w-6 sm:h-9 sm:w-9 border sm:border-2 border-border">
+          {/* Footer Row */}
+          <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+            {/* Company Logo */}
+            <Avatar className="h-7 w-7 sm:h-8 sm:w-8 border border-border">
               <AvatarImage src={companyLogo} alt={companyName || "Company"} />
-              <AvatarFallback className="bg-muted text-muted-foreground text-[8px] sm:text-xs">
-                <Building2 className="h-3 w-3 sm:h-4 sm:w-4" />
+              <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                <Building2 className="h-3.5 w-3.5" />
               </AvatarFallback>
             </Avatar>
             
-            {/* Date and Entries - Right */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            {/* Date and Entries */}
+            <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-destructive" />
+                <Calendar className="w-3.5 h-3.5 text-destructive" />
                 <span className="font-medium text-destructive">
                   {format(new Date(endDate), "MMM dd")}
                 </span>
               </div>
               <div className="flex items-center gap-1">
-                <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <Users className="w-3.5 h-3.5" />
                 <span>{entriesCount}</span>
               </div>
             </div>

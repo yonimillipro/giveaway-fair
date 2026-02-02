@@ -1,1 +1,4 @@
 project_id = "dvsjxkumzvvcfqdpqbdl"
+
+[functions.select-winner]
+verify_jwt = false
