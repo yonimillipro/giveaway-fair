@@ -40,18 +40,21 @@ export type Database = {
           created_at: string
           giveaway_id: string
           id: string
+          is_winner: boolean
           user_id: string
         }
         Insert: {
           created_at?: string
           giveaway_id: string
           id?: string
+          is_winner?: boolean
           user_id: string
         }
         Update: {
           created_at?: string
           giveaway_id?: string
           id?: string
+          is_winner?: boolean
           user_id?: string
         }
         Relationships: [
@@ -183,6 +186,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          winner_selected: boolean
         }
         Insert: {
           company_id: string
@@ -197,6 +201,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          winner_selected?: boolean
         }
         Update: {
           company_id?: string
@@ -211,6 +216,34 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          winner_selected?: boolean
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          title?: string
+          user_id?: string
         }
         Relationships: []
       }
