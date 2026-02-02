@@ -538,6 +538,15 @@ const GiveawayDetail = () => {
                   Maximum {giveaway.max_entries} entries allowed
                 </p>
               )}
+
+              {/* Transparency Text */}
+              <div className="mt-4 p-4 bg-muted/50 rounded-xl border border-border/50">
+                <p className="text-xs sm:text-sm text-muted-foreground text-center leading-relaxed">
+                  Winners are selected automatically and randomly by our system.
+                  <br className="hidden sm:block" />
+                  <span className="sm:ml-1">All eligible entries have an equal chance of winning.</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
