@@ -87,11 +87,12 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
       if (scrollRef.current) {
         const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
         const maxScroll = scrollWidth - clientWidth;
+        const cardWidth = scrollRef.current.querySelector('.promotion-card')?.clientWidth || 280;
         
         if (scrollLeft >= maxScroll - 10) {
           scrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-          scrollRef.current.scrollBy({ left: 280, behavior: 'smooth' });
+          scrollRef.current.scrollBy({ left: cardWidth + 12, behavior: 'smooth' });
         }
       }
     }, autoScrollInterval);
@@ -106,22 +107,22 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -280 : 280;
+      const cardWidth = scrollRef.current.querySelector('.promotion-card')?.clientWidth || 280;
+      const scrollAmount = direction === 'left' ? -(cardWidth + 12) : (cardWidth + 12);
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
   if (loading) {
     return (
-      <div className="px-3 sm:px-4 py-3 bg-gradient-to-r from-primary/5 to-secondary/5">
+      <div className="px-3 sm:px-4 py-3">
         <div className="flex items-center gap-2 mb-3">
           <Skeleton className="h-5 w-5 rounded" />
           <Skeleton className="h-5 w-32" />
         </div>
         <div className="flex gap-3 overflow-hidden">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-44 w-64 flex-shrink-0 rounded-xl" />
-          ))}
+          <Skeleton className="h-44 w-full sm:w-64 flex-shrink-0 rounded-xl" />
+          <Skeleton className="h-44 w-64 flex-shrink-0 rounded-xl hidden sm:block" />
         </div>
       </div>
     );
@@ -133,12 +134,12 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
 
   return (
     <div 
-      className="px-3 sm:px-4 py-3 bg-gradient-to-r from-primary/5 to-secondary/5 relative group"
+      className="px-3 sm:px-4 py-3 bg-transparent relative group"
       onMouseEnter={stopAutoScroll}
       onMouseLeave={() => promotions.length > 1 && startAutoScroll()}
     >
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2">
+        <h2 className="text-sm sm:text-base font-semibold flex items-center gap-2 text-foreground">
           <Tag className="w-4 h-4 text-primary" />
           Active Promotions
         </h2>
@@ -153,28 +154,28 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
       </div>
 
       <div className="relative">
-        {/* Left scroll button */}
+        {/* Left scroll button - visible on hover for desktop */}
         {promotions.length > 1 && (
           <Button
             variant="secondary"
             size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-7 w-7 -ml-1"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-8 w-8 -ml-2 hidden sm:flex"
             onClick={() => scroll('left')}
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
         )}
 
-        {/* Scroll container with snap */}
+        {/* Scroll container - single card on mobile, multiple on larger screens */}
         <div 
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-1"
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-1 -mx-3 px-3 sm:mx-0 sm:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {promotions.map((promotion) => (
             <Card 
               key={promotion.id} 
-              className="flex-shrink-0 w-[240px] sm:w-[280px] overflow-hidden cursor-pointer snap-start rounded-xl border-0 shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98]"
+              className="promotion-card flex-shrink-0 w-[calc(100vw-32px)] sm:w-[280px] md:w-[320px] overflow-hidden cursor-pointer snap-start rounded-xl border border-border/50 shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] bg-card/80 backdrop-blur-sm"
               onClick={() => navigate(`/promotion/${promotion.id}`)}
             >
               {/* Image with gradient overlay */}
@@ -188,7 +189,7 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.onerror = null;
-                        target.src = "https://placehold.co/280x175/A0A0A0/FFFFFF?text=Product";
+                        target.src = "https://placehold.co/320x200/A0A0A0/FFFFFF?text=Product";
                       }}
                     />
                     {/* Gradient overlay for text readability */}
@@ -196,24 +197,24 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
                   </>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-secondary/20">
-                    <Package className="w-8 h-8 text-muted-foreground/50" />
+                    <Package className="w-10 h-10 text-muted-foreground/50" />
                   </div>
                 )}
 
                 {/* Floating discount badge */}
                 <Badge 
-                  className="absolute top-2 right-2 bg-destructive text-destructive-foreground font-bold text-xs px-2 py-1 shadow-lg"
+                  className="absolute top-2.5 right-2.5 bg-destructive text-destructive-foreground font-bold text-sm px-2.5 py-1 shadow-lg"
                 >
                   {promotion.discount_percentage}% OFF
                 </Badge>
 
                 {/* Title overlay on image */}
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <h3 className="text-white font-semibold text-sm line-clamp-1 drop-shadow-md">
+                <div className="absolute bottom-0 left-0 right-0 p-3 sm:p-4">
+                  <h3 className="text-white font-semibold text-base sm:text-lg line-clamp-1 drop-shadow-md">
                     {promotion.name}
                   </h3>
                   {promotion.description && (
-                    <p className="text-white/80 text-xs line-clamp-1 mt-0.5 drop-shadow-md">
+                    <p className="text-white/80 text-xs sm:text-sm line-clamp-1 mt-0.5 drop-shadow-md">
                       {promotion.description}
                     </p>
                   )}
@@ -221,22 +222,22 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
               </div>
 
               {/* Footer info */}
-              <div className="p-2.5 flex items-center justify-between bg-card">
+              <div className="p-3 flex items-center justify-between bg-card/50 backdrop-blur-sm">
                 {promotion.company_name && (
-                  <div className="flex items-center gap-1.5">
-                    <Avatar className="h-5 w-5 border border-border">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-6 w-6 border border-border">
                       <AvatarImage src={promotion.company_logo || undefined} alt={promotion.company_name} />
-                      <AvatarFallback className="bg-muted text-muted-foreground text-[8px]">
+                      <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
                         <Building2 className="h-3 w-3" />
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[80px]">
+                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
                       {promotion.company_name}
                     </span>
                   </div>
                 )}
-                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Tag className="w-3 h-3" />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Tag className="w-3.5 h-3.5" />
                   <span>Until {new Date(promotion.end_date).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -244,12 +245,12 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
           ))}
         </div>
 
-        {/* Right scroll button */}
+        {/* Right scroll button - visible on hover for desktop */}
         {promotions.length > 1 && (
           <Button
             variant="secondary"
             size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-7 w-7 -mr-1"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg h-8 w-8 -mr-2 hidden sm:flex"
             onClick={() => scroll('right')}
           >
             <ChevronRight className="w-4 h-4" />
