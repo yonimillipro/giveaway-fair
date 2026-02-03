@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import { GiveawayRequirements } from "@/components/GiveawayRequirements";
 import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { CompanyInfo } from "@/components/CompanyInfo";
+import { useGiveawayView } from "@/hooks/useGiveawayView";
 import {
   Carousel,
   CarouselContent,
@@ -30,7 +31,6 @@ import {
 } from "lucide-react";
 import { SocialShareButton } from "@/components/SocialShareButton";
 import { format, formatDistanceToNow } from "date-fns";
-import { Separator } from "@/components/ui/separator";
 
 interface GiveawayDetail {
   id: string;
@@ -56,9 +56,13 @@ const GiveawayDetail = () => {
   const navigate = useNavigate();
   const { user, isEmailVerified } = useAuth();
 
+  // Track view when user visits this page
+  useGiveawayView(id || "");
+
   const [giveaway, setGiveaway] = useState<GiveawayDetail | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [entriesCount, setEntriesCount] = useState(0);
+  const [viewsCount, setViewsCount] = useState(0);
   const [hasJoined, setHasJoined] = useState(false);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -108,6 +112,12 @@ const GiveawayDetail = () => {
         .eq("giveaway_id", id);
 
       setEntriesCount(count || 0);
+
+      // Fetch views count
+      const { data: viewCount } = await supabase
+        .rpc('get_giveaway_view_count', { giveaway_uuid: id });
+      
+      setViewsCount(viewCount || 0);
 
       // Fetch likes count using secure RPC function
       const { data: likeCount } = await supabase
@@ -347,7 +357,7 @@ const GiveawayDetail = () => {
                 {/* View Count */}
                 <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full text-sm z-10">
                   <Eye className="w-4 h-4" />
-                  <span>{entriesCount * 3 + 34} views</span>
+                  <span>{viewsCount} views</span>
                 </div>
 
                 {/* Posted Time */}

@@ -172,6 +172,38 @@ export type Database = {
           },
         ]
       }
+      giveaway_views: {
+        Row: {
+          created_at: string
+          giveaway_id: string
+          id: string
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          giveaway_id: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          giveaway_id?: string
+          id?: string
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "giveaway_views_giveaway_id_fkey"
+            columns: ["giveaway_id"]
+            isOneToOne: false
+            referencedRelation: "giveaways"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       giveaways: {
         Row: {
           company_id: string
@@ -504,6 +536,10 @@ export type Database = {
         Args: { giveaway_uuid: string }
         Returns: number
       }
+      get_giveaway_view_count: {
+        Args: { giveaway_uuid: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -513,6 +549,10 @@ export type Database = {
       }
       user_follows_company: { Args: { company_uuid: string }; Returns: boolean }
       user_has_liked_giveaway: {
+        Args: { giveaway_uuid: string }
+        Returns: boolean
+      }
+      user_has_viewed_giveaway: {
         Args: { giveaway_uuid: string }
         Returns: boolean
       }

@@ -2,13 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { PromotionSlider } from "@/components/dashboard/PromotionSlider";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { GiveawayGrid } from "@/components/dashboard/GiveawayGrid";
+import { useNotificationToasts } from "@/hooks/useNotificationToasts";
 
 interface Giveaway {
   id: string;
@@ -22,6 +22,7 @@ interface Giveaway {
   has_joined?: boolean;
   company_logo?: string;
   company_name?: string;
+  views_count?: number;
 }
 
 const UserDashboard = () => {
@@ -29,10 +30,15 @@ const UserDashboard = () => {
   const navigate = useNavigate();
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [myEntries, setMyEntries] = useState<Giveaway[]>([]);
+  const [myWins, setMyWins] = useState<Giveaway[]>([]);
   const [loading, setLoading] = useState(true);
+  const [winsLoading, setWinsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all-giveaways");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [winsCount, setWinsCount] = useState(0);
+
+  // Enable real-time notification toasts
+  useNotificationToasts();
 
   useEffect(() => {
     const fetchAvatar = async () => {
@@ -89,12 +95,17 @@ const UserDashboard = () => {
             .eq("id", giveaway.company_id)
             .maybeSingle();
 
+          // Get view count
+          const { data: viewCount } = await supabase
+            .rpc('get_giveaway_view_count', { giveaway_uuid: giveaway.id });
+
           return {
             ...giveaway,
             entries_count: count || 0,
             has_joined: !!entryData,
             company_logo: profileData?.logo_url || undefined,
             company_name: profileData?.full_name || undefined,
+            views_count: viewCount || 0,
           };
         })
       );
@@ -120,7 +131,8 @@ const UserDashboard = () => {
             description,
             image_url,
             prize_value,
-            end_date
+            end_date,
+            company_id
           )
         `
         )
@@ -159,16 +171,76 @@ const UserDashboard = () => {
     }
   }, [user]);
 
+  const fetchMyWins = useCallback(async () => {
+    if (!user) return;
+    setWinsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("giveaway_entries")
+        .select(
+          `
+          giveaways (
+            id,
+            title,
+            description,
+            image_url,
+            prize_value,
+            end_date,
+            company_id
+          )
+        `
+        )
+        .eq("user_id", user.id)
+        .eq("is_winner", true);
+
+      if (error) {
+        console.error("Error fetching my wins:", error);
+      } else {
+        interface GiveawayEntry {
+          giveaways: {
+            id: string;
+            title: string;
+            description: string;
+            image_url: string | null;
+            prize_value: number | null;
+            end_date: string;
+            company_id?: string;
+          } | null;
+        }
+        const wins: Giveaway[] = (data || [])
+          .filter((entry: GiveawayEntry) => entry.giveaways !== null)
+          .map((entry: GiveawayEntry) => ({
+            id: entry.giveaways!.id,
+            title: entry.giveaways!.title,
+            description: entry.giveaways!.description,
+            image_url: entry.giveaways!.image_url,
+            prize_value: entry.giveaways!.prize_value,
+            end_date: entry.giveaways!.end_date,
+            company_id: entry.giveaways!.company_id || "",
+            has_joined: true,
+          }));
+        setMyWins(wins);
+      }
+    } catch (error) {
+      console.error("An unexpected error occurred:", error);
+    } finally {
+      setWinsLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchGiveaways();
       fetchMyEntries();
+      fetchMyWins();
     } else {
       setGiveaways([]);
       setMyEntries([]);
+      setMyWins([]);
       setLoading(false);
+      setWinsLoading(false);
     }
-  }, [user, fetchGiveaways, fetchMyEntries]);
+  }, [user, fetchGiveaways, fetchMyEntries, fetchMyWins]);
 
   const handleGiveawayView = (id: string) => {
     navigate(`/giveaway/${id}`);
@@ -180,7 +252,7 @@ const UserDashboard = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Sticky Header + Promotion Banner */}
-      <div className="sticky top-0 z-40 bg-background shadow-sm">
+      <div className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm shadow-sm">
         <DashboardHeader
           avatarUrl={avatarUrl}
           activeTab={activeTab}
@@ -219,6 +291,16 @@ const UserDashboard = () => {
               loading={false}
               emptyMessage="You haven't joined any giveaways yet."
               emptyIcon="trophy"
+              onView={handleGiveawayView}
+            />
+          </TabsContent>
+
+          <TabsContent value="my-wins" className="mt-0">
+            <GiveawayGrid
+              giveaways={myWins}
+              loading={winsLoading}
+              emptyMessage="You haven't won any giveaways yet. Keep participating!"
+              emptyIcon="award"
               onView={handleGiveawayView}
             />
           </TabsContent>
