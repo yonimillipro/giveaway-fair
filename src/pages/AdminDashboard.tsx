@@ -106,6 +106,18 @@ interface Product {
   price: number;
 }
 
+interface Winner {
+  id: string;
+  giveaway_id: string;
+  giveaway_title: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  company_name: string;
+  prize_value: number | null;
+  selected_at: string;
+}
+
 const AdminDashboard = () => {
   const { signOut } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
@@ -113,6 +125,7 @@ const AdminDashboard = () => {
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [winners, setWinners] = useState<Winner[]>([]);
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0,
     totalCompanies: 0,
@@ -265,6 +278,7 @@ const AdminDashboard = () => {
       await fetchGiveaways(companyProfiles);
       await fetchPromotions();
       await fetchProducts();
+      await fetchWinners(companyProfiles);
       setLoading(false);
     };
     loadData();
@@ -523,6 +537,71 @@ const AdminDashboard = () => {
       setProducts(data || []);
     } catch (error) {
       console.error("Error fetching products:", error);
+    }
+  };
+
+  const fetchWinners = async (companyProfiles: CompanyUser[]) => {
+    try {
+      const companyMap = new Map(
+        (companyProfiles || []).map((p) => [p.id, p.full_name || "N/A"])
+      );
+
+      // Fetch winners with giveaway data
+      const { data: winnersData, error } = await supabase
+        .from("winners")
+        .select(`
+          id,
+          giveaway_id,
+          user_id,
+          selected_at,
+          giveaways (
+            title,
+            prize_value,
+            company_id
+          )
+        `)
+        .order("selected_at", { ascending: false });
+
+      if (error) throw error;
+
+      // Fetch user profiles for winners
+      const userIds = [...new Set((winnersData || []).map((w) => w.user_id))];
+      const { data: userProfiles } = await supabase
+        .from("profiles")
+        .select("id, email, full_name")
+        .in("id", userIds);
+
+      const userMap = new Map(
+        (userProfiles || []).map((u) => [u.id, { email: u.email, name: u.full_name || "N/A" }])
+      );
+
+      interface WinnerData {
+        id: string;
+        giveaway_id: string;
+        user_id: string;
+        selected_at: string;
+        giveaways: {
+          title: string;
+          prize_value: number | null;
+          company_id: string;
+        } | null;
+      }
+
+      const formattedWinners: Winner[] = (winnersData || []).map((w: WinnerData) => ({
+        id: w.id,
+        giveaway_id: w.giveaway_id,
+        giveaway_title: w.giveaways?.title || "Unknown Giveaway",
+        user_id: w.user_id,
+        user_email: userMap.get(w.user_id)?.email || "Unknown",
+        user_name: userMap.get(w.user_id)?.name || "N/A",
+        company_name: w.giveaways?.company_id ? companyMap.get(w.giveaways.company_id) || "Unknown" : "Unknown",
+        prize_value: w.giveaways?.prize_value || null,
+        selected_at: w.selected_at,
+      }));
+
+      setWinners(formattedWinners);
+    } catch (error) {
+      console.error("Error fetching winners:", error);
     }
   };
 
@@ -2005,6 +2084,68 @@ const AdminDashboard = () => {
                         </TableRow>
                       );
                     })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        {/* -------------------------------------------------------------------------- */}
+
+        {/* Winners Table */}
+        <Card className="mb-4 sm:mb-8">
+          <CardHeader className="p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <CardTitle className="text-sm sm:text-lg flex items-center gap-2">
+                <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-500" />
+                Winners
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
+            {loading ? (
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
+                Loading winners...
+              </p>
+            ) : winners.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4 text-xs sm:text-sm">
+                No winners selected yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-[10px] sm:text-xs">Giveaway</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Winner</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden sm:table-cell">Company</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs hidden md:table-cell">Prize</TableHead>
+                      <TableHead className="text-[10px] sm:text-xs">Selected</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {winners.map((winner) => (
+                      <TableRow key={winner.id}>
+                        <TableCell className="font-medium text-[10px] sm:text-sm max-w-[100px] sm:max-w-none truncate">
+                          {winner.giveaway_title}
+                        </TableCell>
+                        <TableCell className="text-[10px] sm:text-sm">
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[80px] sm:max-w-none">{winner.user_name}</span>
+                            <span className="text-muted-foreground text-[8px] sm:text-xs truncate max-w-[80px] sm:max-w-none">{winner.user_email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-[10px] sm:text-sm hidden sm:table-cell">
+                          {winner.company_name}
+                        </TableCell>
+                        <TableCell className="text-[10px] sm:text-sm hidden md:table-cell">
+                          {winner.prize_value ? `$${winner.prize_value.toFixed(0)}` : "N/A"}
+                        </TableCell>
+                        <TableCell className="text-[10px] sm:text-sm">
+                          {format(new Date(winner.selected_at), "MM/dd/yy")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>

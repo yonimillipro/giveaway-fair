@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     // Find ended giveaways that haven't had a winner selected
     const { data: endedGiveaways, error: giveawayError } = await supabase
       .from('giveaways')
-      .select('id, title')
+      .select('id, title, company_id, prize_value')
       .eq('winner_selected', false)
       .lt('end_date', new Date().toISOString());
 
@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
     }
 
     console.log(`Found ${endedGiveaways?.length || 0} giveaways needing winner selection`);
+
+    // Fetch all admin user IDs for notifications
+    const { data: adminRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin');
+
+    const adminIds = (adminRoles || []).map(r => r.user_id);
+    console.log(`Found ${adminIds.length} admin(s) to notify`);
 
     const results: { giveaway_id: string; winner_id: string | null; status: string }[] = [];
 
@@ -104,24 +113,75 @@ Deno.serve(async (req) => {
         // Continue anyway, don't throw
       }
 
-      // Create in-app notification for the winner
-      const notificationTitle = '🎉 You Won!';
-      const notificationMessage = `You have been selected as the winner of "${giveaway.title}"`;
+      // Get winner's profile info for notifications
+      const { data: winnerProfile } = await supabase
+        .from('profiles')
+        .select('full_name, email')
+        .eq('id', randomEntry.user_id)
+        .single();
 
-      const { error: notificationError } = await supabase
+      const winnerName = winnerProfile?.full_name || winnerProfile?.email || 'A user';
+      const prizeText = giveaway.prize_value ? ` ($${giveaway.prize_value})` : '';
+
+      // === NOTIFICATION 1: Notify the WINNER ===
+      const winnerNotificationTitle = '🎉 Congratulations! You Won!';
+      const winnerNotificationMessage = `You have been selected as the winner of "${giveaway.title}"${prizeText}. Check your dashboard for more details!`;
+
+      const { error: winnerNotifError } = await supabase
         .from('notifications')
         .insert({
           user_id: randomEntry.user_id,
-          title: notificationTitle,
-          message: notificationMessage,
+          title: winnerNotificationTitle,
+          message: winnerNotificationMessage,
           is_read: false
         });
 
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
-        // Continue anyway, don't throw - winner was still selected
+      if (winnerNotifError) {
+        console.error('Error creating winner notification:', winnerNotifError);
       } else {
         console.log(`Notification created for winner ${randomEntry.user_id}`);
+      }
+
+      // === NOTIFICATION 2: Notify the COMPANY ===
+      if (giveaway.company_id) {
+        const companyNotificationTitle = '🏆 Winner Selected for Your Giveaway';
+        const companyNotificationMessage = `${winnerName} has been selected as the winner of your giveaway "${giveaway.title}"${prizeText}.`;
+
+        const { error: companyNotifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: giveaway.company_id,
+            title: companyNotificationTitle,
+            message: companyNotificationMessage,
+            is_read: false
+          });
+
+        if (companyNotifError) {
+          console.error('Error creating company notification:', companyNotifError);
+        } else {
+          console.log(`Notification created for company ${giveaway.company_id}`);
+        }
+      }
+
+      // === NOTIFICATION 3: Notify all ADMINS ===
+      for (const adminId of adminIds) {
+        const adminNotificationTitle = '📊 Winner Selected';
+        const adminNotificationMessage = `Winner selected for "${giveaway.title}": ${winnerName}${prizeText}.`;
+
+        const { error: adminNotifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: adminId,
+            title: adminNotificationTitle,
+            message: adminNotificationMessage,
+            is_read: false
+          });
+
+        if (adminNotifError) {
+          console.error(`Error creating admin notification for ${adminId}:`, adminNotifError);
+        } else {
+          console.log(`Notification created for admin ${adminId}`);
+        }
       }
 
       results.push({

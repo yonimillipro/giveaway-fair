@@ -4,7 +4,8 @@ import {
   Menu, 
   X, 
   Gift, 
-  Trophy, 
+  Trophy,
+  BarChart3,
   Users, 
   User, 
   HelpCircle,
@@ -40,6 +41,7 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange, onSignOut }: Da
   const dashboardLinks = [
     { name: "Giveaways", icon: Gift, tab: "all-giveaways" },
     { name: "My Entries", icon: Trophy, tab: "my-entries" },
+    { name: "My Wins", icon: Trophy, tab: "my-wins" },
   ];
 
   const productLinks = [
@@ -62,6 +64,7 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange, onSignOut }: Da
 
   const userLinks = [
     { name: "Profile / Settings", href: "/profile", icon: User },
+    { name: "My Status", href: "/status", icon: BarChart3 },
   ];
 
   const handleSignOut = () => {
