@@ -173,7 +173,7 @@ export const GiveawayCard = ({
           {prizeValue !== undefined && (
             <Badge 
               variant="secondary" 
-              className="absolute bottom-2 left-2 bg-white/90 text-foreground font-bold text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 shadow-lg z-10"
+              className="absolute bottom-2 left-2 bg-white/90 text-black font-bold text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 shadow-lg z-10"
             >
               ${prizeValue}
             </Badge>

@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { PromotionSlider } from "@/components/dashboard/PromotionSlider";
-import { StatsCards } from "@/components/dashboard/StatsCards";
 import { FilterTabs } from "@/components/dashboard/FilterTabs";
 import { GiveawayGrid } from "@/components/dashboard/GiveawayGrid";
 import { useNotificationToasts } from "@/hooks/useNotificationToasts";
@@ -35,7 +34,6 @@ const UserDashboard = () => {
   const [winsLoading, setWinsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all-giveaways");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [winsCount, setWinsCount] = useState(0);
 
   // Enable real-time notification toasts
   useNotificationToasts();
@@ -51,18 +49,6 @@ const UserDashboard = () => {
       setAvatarUrl(data?.avatar_url || null);
     };
     fetchAvatar();
-  }, [user]);
-
-  useEffect(() => {
-    const fetchWins = async () => {
-      if (!user) return;
-      const { count } = await supabase
-        .from("winners")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
-      setWinsCount(count || 0);
-    };
-    fetchWins();
   }, [user]);
 
   const fetchGiveaways = useCallback(async () => {
@@ -246,9 +232,6 @@ const UserDashboard = () => {
     navigate(`/giveaway/${id}`);
   };
 
-  const activeGiveaways = giveaways.filter((g) => !g.has_joined).length;
-  const totalEntries = myEntries.length;
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Sticky Header + Promotion Banner */}
@@ -262,13 +245,6 @@ const UserDashboard = () => {
       </div>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 max-w-7xl flex-1">
-        {/* Stats Cards */}
-        <StatsCards
-          totalEntries={totalEntries}
-          activeGiveaways={activeGiveaways}
-          wins={winsCount}
-          loading={loading}
-        />
 
         {/* Filter Tabs */}
         <FilterTabs activeTab={activeTab} onTabChange={setActiveTab} />

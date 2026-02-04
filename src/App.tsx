@@ -26,6 +26,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
+import Status from "./pages/Status";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["user", "company", "admin"]}>
                     <Profile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/status"
+                element={
+                  <ProtectedRoute allowedRoles={["user"]}>
+                    <Status />
                   </ProtectedRoute>
                 }
               />
