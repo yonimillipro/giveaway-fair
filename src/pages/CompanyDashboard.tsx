@@ -29,15 +29,14 @@ import {
   LogOut,
   Plus,
   Users,
-  Trophy,
   Gift,
   Package,
   Trash2,
-  Upload,
 } from "lucide-react";
 import { GiveawayCard } from "../components/GiveawayCard";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "../components/ThemeToggle";
+import { ImageUpload } from "../components/ImageUpload";
 
 interface Giveaway {
   id: string;
@@ -69,6 +68,8 @@ const CompanyDashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyProfile, setCompanyProfile] = useState<{ logo_url?: string; full_name?: string } | null>(null);
+  const [giveawayDialogOpen, setGiveawayDialogOpen] = useState(false);
+  const [productDialogOpen, setProductDialogOpen] = useState(false);
   const [newGiveaway, setNewGiveaway] = useState({
     title: "",
     description: "",
@@ -178,6 +179,7 @@ const CompanyDashboard = () => {
           prizeValue: 0,
           imageUrl: "",
         });
+        setGiveawayDialogOpen(false);
         fetchGiveaways();
       }
     } catch (error) {
@@ -190,10 +192,7 @@ const CompanyDashboard = () => {
   };
 
   const handleDeleteGiveaway = async (id: string) => {
-    // NOTE: Changed to console.error due to not being allowed to use window.confirm()
     console.warn("Confirm delete operation for giveaway:", id);
-    // In a real app, you'd use a custom modal here instead of window.confirm
-    // if (!window.confirm('Are you sure you want to delete this giveaway?')) return;
     try {
       const { error } = await supabase.from("giveaways").delete().eq("id", id);
 
@@ -235,6 +234,7 @@ const CompanyDashboard = () => {
       } else {
         toast.success("Product created successfully!");
         setNewProduct({ name: "", description: "", price: 0, imageUrl: "" });
+        setProductDialogOpen(false);
         fetchProducts();
       }
     } catch (error) {
@@ -247,10 +247,7 @@ const CompanyDashboard = () => {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    // NOTE: Changed to console.error due to not being allowed to use window.confirm()
     console.warn("Confirm delete operation for product:", id);
-    // In a real app, you'd use a custom modal here instead of window.confirm
-    // if (!window.confirm('Are you sure you want to delete this product?')) return;
     try {
       const { error } = await supabase.from("products").delete().eq("id", id);
 
@@ -271,8 +268,7 @@ const CompanyDashboard = () => {
   };
 
   const handleGiveawayView = (id: string) => {
-    // Navigate to the detail page for the giveaway
-    navigate(`/giveaway/${id}`); // Mock detail page route
+    navigate(`/giveaway/${id}`);
   };
 
   const handleSignOut = async () => {
@@ -367,7 +363,7 @@ const CompanyDashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6">
                 <CardTitle className="text-base sm:text-2xl">Your Giveaways</CardTitle>
-                <Dialog>
+                <Dialog open={giveawayDialogOpen} onOpenChange={setGiveawayDialogOpen}>
                   <DialogTrigger asChild>
                     <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
                       <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -375,7 +371,7 @@ const CompanyDashboard = () => {
                       <span className="sm:hidden">Create</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Create New Giveaway</DialogTitle>
                     </DialogHeader>
@@ -434,19 +430,16 @@ const CompanyDashboard = () => {
                           }
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="image_url">Image URL (Optional)</Label>
-                        <Input
-                          id="image_url"
-                          value={newGiveaway.imageUrl}
-                          onChange={(e) =>
-                            setNewGiveaway({
-                              ...newGiveaway,
-                              imageUrl: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                      <ImageUpload
+                        bucket="giveaway-images"
+                        folder="giveaways"
+                        currentUrl={newGiveaway.imageUrl}
+                        onUrlChange={(url) =>
+                          setNewGiveaway({ ...newGiveaway, imageUrl: url })
+                        }
+                        label="Giveaway Image"
+                        urlLabel="Or enter image URL (Optional)"
+                      />
                     </div>
                     <Button onClick={handleCreateGiveaway}>
                       <Gift className="w-4 h-4 mr-2" />
@@ -510,7 +503,7 @@ const CompanyDashboard = () => {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between p-3 sm:p-6">
                 <CardTitle className="text-base sm:text-2xl">Your Products</CardTitle>
-                <Dialog>
+                <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-4">
                       <Plus className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
@@ -518,7 +511,7 @@ const CompanyDashboard = () => {
                       <span className="sm:hidden">Add</span>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
+                  <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Add New Product</DialogTitle>
                     </DialogHeader>
@@ -565,21 +558,16 @@ const CompanyDashboard = () => {
                           }
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="product-image-url">
-                          Image URL (Optional)
-                        </Label>
-                        <Input
-                          id="product-image-url"
-                          value={newProduct.imageUrl}
-                          onChange={(e) =>
-                            setNewProduct({
-                              ...newProduct,
-                              imageUrl: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
+                      <ImageUpload
+                        bucket="giveaway-images"
+                        folder="products"
+                        currentUrl={newProduct.imageUrl}
+                        onUrlChange={(url) =>
+                          setNewProduct({ ...newProduct, imageUrl: url })
+                        }
+                        label="Product Image"
+                        urlLabel="Or enter image URL (Optional)"
+                      />
                     </div>
                     <Button onClick={handleCreateProduct}>
                       <Package className="w-4 h-4 mr-2" />
