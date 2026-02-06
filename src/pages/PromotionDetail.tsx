@@ -63,15 +63,18 @@ const PromotionDetail = () => {
       if (promoError) throw promoError;
       setPromotion(promoData);
 
-      // Fetch company profile if company_id exists
+      // Fetch company profile using edge function if company_id exists
       if (promoData.company_id) {
-        const { data: companyData } = await supabase
-          .from("profiles")
-          .select("full_name, logo_url")
-          .eq("id", promoData.company_id)
-          .maybeSingle();
-
-        setCompany(companyData);
+        try {
+          const { data: companyResponse } = await supabase.functions.invoke("get-company-info", {
+            body: { companyId: promoData.company_id },
+          });
+          if (companyResponse?.company) {
+            setCompany(companyResponse.company);
+          }
+        } catch (err) {
+          console.error("Error fetching company info:", err);
+        }
       }
 
       // Fetch products linked to this promotion
