@@ -94,19 +94,25 @@ const Index = () => {
 
           const images = imagesData?.map((img) => img.image_url) || [];
 
-          // Fetch company profile for logo
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("logo_url, full_name")
-            .eq("id", giveaway.company_id)
-            .maybeSingle();
+          // Fetch company profile using edge function (bypasses RLS)
+          let companyLogo: string | undefined;
+          let companyName: string | undefined;
+          try {
+            const { data: companyData } = await supabase.functions.invoke("get-company-info", {
+              body: { companyId: giveaway.company_id },
+            });
+            companyLogo = companyData?.company?.logo_url || undefined;
+            companyName = companyData?.company?.full_name || undefined;
+          } catch (err) {
+            console.error("Error fetching company info:", err);
+          }
 
           return {
             ...giveaway,
             entries_count: count || 0,
             images,
-            company_logo: profileData?.logo_url || undefined,
-            company_name: profileData?.full_name || undefined,
+            company_logo: companyLogo,
+            company_name: companyName,
           };
         })
       );
