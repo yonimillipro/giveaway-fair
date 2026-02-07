@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CompanyFollowProvider } from "@/contexts/CompanyFollowContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -41,63 +42,65 @@ const App = () => (
           <ScrollToTop />
           <CookieConsent />
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/promotions" element={<Promotions />} />
-              <Route path="/promotion/:id" element={<PromotionDetail />} />
-              <Route path="/giveaway/:id" element={<GiveawayDetail />} />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/careers" element={<Careers />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/cookies" element={<CookiePolicy />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute allowedRoles={["user", "company", "admin"]}>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/status"
-                element={
-                  <ProtectedRoute allowedRoles={["user"]}>
-                    <Status />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={["user"]}>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/company"
-                element={
-                  <ProtectedRoute allowedRoles={["company"]}>
-                    <CompanyDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <CompanyFollowProvider>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/promotions" element={<Promotions />} />
+                <Route path="/promotion/:id" element={<PromotionDetail />} />
+                <Route path="/giveaway/:id" element={<GiveawayDetail />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
+                <Route path="/about" element={<AboutUs />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/cookies" element={<CookiePolicy />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company", "admin"]}>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/status"
+                  element={
+                    <ProtectedRoute allowedRoles={["user"]}>
+                      <Status />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["user"]}>
+                      <UserDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/company"
+                  element={
+                    <ProtectedRoute allowedRoles={["company"]}>
+                      <CompanyDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </CompanyFollowProvider>
           </AuthProvider>
         </BrowserRouter>
       </ThemeProvider>
