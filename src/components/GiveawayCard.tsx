@@ -217,12 +217,17 @@ export const GiveawayCard = ({
                 <span>{entriesCount}</span>
               </div>
               {/* Date */}
-              <div className="flex items-center gap-0.5 sm:gap-1">
-                <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 text-destructive" />
-                <span className="font-medium text-destructive">
-                  {format(new Date(endDate), "MMM dd")}
-                </span>
-              </div>
+              {(() => {
+                const isEnded = new Date(endDate) < new Date();
+                return (
+                  <div className="flex items-center gap-0.5 sm:gap-1">
+                    <Calendar className={`w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-3.5 md:h-3.5 ${isEnded ? 'text-destructive' : 'text-green-500'}`} />
+                    <span className={`font-medium ${isEnded ? 'text-destructive' : 'text-green-500'}`}>
+                      {format(new Date(endDate), "MMM dd")}
+                    </span>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>

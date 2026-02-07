@@ -80,10 +80,9 @@ const Index = () => {
 
       const giveawaysWithDetails = await Promise.all(
         (data || []).map(async (giveaway) => {
-          const { count } = await supabase
-            .from("giveaway_entries")
-            .select("*", { count: "exact", head: true })
-            .eq("giveaway_id", giveaway.id);
+          // Use secure RPC function to get entry count (bypasses RLS)
+          const { data: entriesCount } = await supabase
+            .rpc('get_giveaway_entry_count', { giveaway_uuid: giveaway.id });
 
           // Fetch images for this giveaway
           const { data: imagesData } = await supabase
@@ -109,7 +108,7 @@ const Index = () => {
 
           return {
             ...giveaway,
-            entries_count: count || 0,
+            entries_count: entriesCount || 0,
             images,
             company_logo: companyLogo,
             company_name: companyName,

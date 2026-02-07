@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCompanyFollowContext } from "@/contexts/CompanyFollowContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,6 +63,7 @@ export const GiveawayRequirements = ({
 }: GiveawayRequirementsProps) => {
   const { user, isEmailVerified } = useAuth();
   const navigate = useNavigate();
+  const { getFollowState, initializeCompany } = useCompanyFollowContext();
   
   const [requirements, setRequirements] = useState<Requirements>({
     require_email_verified: true,
@@ -72,13 +74,17 @@ export const GiveawayRequirements = ({
     require_tiktok: false,
   });
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
-  const [isFollowing, setIsFollowing] = useState(false);
   const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
+  // Get follow state from context
+  const followState = getFollowState(companyId);
+  const isFollowing = followState.isFollowing;
+
   useEffect(() => {
+    initializeCompany(companyId);
     fetchData();
-  }, [giveawayId, companyId, user]);
+  }, [giveawayId, companyId, user, initializeCompany]);
 
   useEffect(() => {
     checkAllRequirements();
@@ -106,14 +112,8 @@ export const GiveawayRequirements = ({
         setCompanyProfile(companyData.company);
       }
 
-      // Check follow status
+      // Fetch completed tasks (follow status is now from context)
       if (user) {
-        const { data: followData } = await supabase
-          .rpc('user_follows_company', { company_uuid: companyId });
-        
-        setIsFollowing(!!followData);
-
-        // Fetch completed tasks
         const { data: tasksData } = await supabase
           .from("user_task_completions")
           .select("task_type")
@@ -181,9 +181,7 @@ export const GiveawayRequirements = ({
     }
   };
 
-  const handleFollowChange = (following: boolean) => {
-    setIsFollowing(following);
-  };
+  // handleFollowChange no longer needed - context handles state sync
 
   if (loading) {
     return (
@@ -273,7 +271,6 @@ export const GiveawayRequirements = ({
             <CompanyFollowButton 
               companyId={companyId} 
               size="sm"
-              onFollowChange={handleFollowChange}
             />
           </div>
         )}

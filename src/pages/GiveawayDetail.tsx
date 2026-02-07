@@ -105,13 +105,11 @@ const GiveawayDetail = () => {
       }
       setImages(imageUrls);
 
-      // Fetch entries count
-      const { count } = await supabase
-        .from("giveaway_entries")
-        .select("*", { count: "exact", head: true })
-        .eq("giveaway_id", id);
+      // Fetch entries count using secure RPC function (bypasses RLS)
+      const { data: entriesData } = await supabase
+        .rpc('get_giveaway_entry_count', { giveaway_uuid: id });
 
-      setEntriesCount(count || 0);
+      setEntriesCount(entriesData || 0);
 
       // Fetch views count
       const { data: viewCount } = await supabase

@@ -532,6 +532,10 @@ export type Database = {
         Args: { company_uuid: string }
         Returns: number
       }
+      get_giveaway_entry_count: {
+        Args: { giveaway_uuid: string }
+        Returns: number
+      }
       get_giveaway_like_count: {
         Args: { giveaway_uuid: string }
         Returns: number
