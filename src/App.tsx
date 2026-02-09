@@ -28,6 +28,7 @@ import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
 import Status from "./pages/Status";
+import Winners from "./pages/Winners";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,14 @@ const App = () => (
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/cookies" element={<CookiePolicy />} />
                 <Route path="/faq" element={<FAQ />} />
+                <Route
+                  path="/winners"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company", "admin"]}>
+                      <Winners />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/profile"
                   element={

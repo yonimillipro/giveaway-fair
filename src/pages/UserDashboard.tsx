@@ -63,10 +63,9 @@ const UserDashboard = () => {
 
       const giveawaysWithDetails = await Promise.all(
         (data || []).map(async (giveaway) => {
-          const { count } = await supabase
-            .from("giveaway_entries")
-            .select("*", { count: "exact", head: true })
-            .eq("giveaway_id", giveaway.id);
+          // Use secure RPC function to get entry count (bypasses RLS)
+          const { data: count } = await supabase
+            .rpc('get_giveaway_entry_count', { giveaway_uuid: giveaway.id });
 
           const { data: entryData } = await supabase
             .from("giveaway_entries")
