@@ -37,6 +37,8 @@ import { GiveawayCard } from "../components/GiveawayCard";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { ImageUpload } from "../components/ImageUpload";
+import { NotificationBell } from "../components/NotificationBell";
+import { useNotificationToasts } from "@/hooks/useNotificationToasts";
 
 interface Giveaway {
   id: string;
@@ -64,6 +66,9 @@ interface Product {
 const CompanyDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Enable real-time notification toasts
+  useNotificationToasts();
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -106,19 +111,26 @@ const CompanyDashboard = () => {
     try {
       const { data, error } = await supabase
         .from("giveaways")
-        .select("*, entries_count:giveaway_entries(count)")
+        .select("*")
         .eq("company_id", user?.id)
         .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching giveaways:", error);
       } else {
-        const processedData = data.map((g) => ({
-          ...g,
-          entries_count: g.entries_count[0]?.count || 0,
-          company_logo: companyProfile?.logo_url,
-          company_name: companyProfile?.full_name,
-        }));
+        // Use RPC to get accurate entry counts (bypasses RLS)
+        const processedData = await Promise.all(
+          (data || []).map(async (g) => {
+            const { data: entryCount } = await supabase
+              .rpc('get_giveaway_entry_count', { giveaway_uuid: g.id });
+            return {
+              ...g,
+              entries_count: entryCount || 0,
+              company_logo: companyProfile?.logo_url,
+              company_name: companyProfile?.full_name,
+            };
+          })
+        );
         setGiveaways(processedData);
       }
     } catch (error) {
@@ -294,6 +306,7 @@ const CompanyDashboard = () => {
               {user?.email}
             </span>
             <ThemeToggle />
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs sm:text-sm px-2 sm:px-3">
               <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Sign Out</span>

@@ -61,11 +61,18 @@ Deno.serve(async (req) => {
       if (entryError || !randomEntry) {
         console.log(`No entries found for giveaway ${giveaway.id}`);
         
-        // Mark as winner_selected even if no entries (to prevent re-processing)
-        await supabase
-          .from('giveaways')
-          .update({ winner_selected: true })
-          .eq('id', giveaway.id);
+        // Do NOT mark winner_selected if no entries
+        // Notify company that giveaway ended with no entries
+        if (giveaway.company_id) {
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: giveaway.company_id,
+              title: '⚠️ Giveaway Ended - No Entries',
+              message: `Your giveaway "${giveaway.title}" has ended with no entries. No winner was selected.`,
+              is_read: false
+            });
+        }
 
         results.push({
           giveaway_id: giveaway.id,

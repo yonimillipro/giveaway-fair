@@ -44,6 +44,10 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange, onSignOut }: Da
     { name: "My Wins", icon: Trophy, tab: "my-wins" },
   ];
 
+  const extraPages = [
+    { name: "All Winners", href: "/winners", icon: Trophy },
+  ];
+
   const productLinks = [
     { name: "Promotions", href: "/promotions", icon: Gift },
     { name: "How it Works", href: "/how-it-works", icon: HelpCircle },
@@ -109,6 +113,20 @@ export const DashboardHamburgerMenu = ({ activeTab, onTabChange, onSignOut }: Da
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-foreground hover:bg-muted"
               }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Extra Pages */}
+        <div className="space-y-1 mt-1">
+          {extraPages.map((item) => (
+            <button
+              key={item.name}
+              onClick={() => handleNavigation(item.href)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground hover:bg-muted transition-colors"
             >
               <item.icon className="h-4 w-4" />
               {item.name}
