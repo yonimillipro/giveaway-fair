@@ -77,6 +77,19 @@ const GiveawayDetail = () => {
     }
   }, [id, user]);
 
+  // Failsafe: trigger winner selection server-side if giveaway ended with no winner
+  const triggerWinnerSelectionFallback = async (giveawayData: GiveawayDetail) => {
+    const isEnded = new Date(giveawayData.end_date) < new Date();
+    if (isEnded && !(giveawayData as any).winner_selected) {
+      try {
+        console.log('[Failsafe] Triggering winner selection for ended giveaway:', giveawayData.id);
+        await supabase.functions.invoke('select-winner', { body: {} });
+      } catch (err) {
+        console.error('[Failsafe] Error triggering winner selection:', err);
+      }
+    }
+  };
+
   const fetchGiveawayDetails = async () => {
     try {
       // Fetch giveaway
@@ -88,6 +101,9 @@ const GiveawayDetail = () => {
 
       if (giveawayError) throw giveawayError;
       setGiveaway(giveawayData);
+
+      // Failsafe: if giveaway ended and no winner, trigger server-side selection
+      triggerWinnerSelectionFallback(giveawayData);
 
       // Fetch giveaway images
       const { data: imagesData } = await supabase

@@ -6,224 +6,218 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  try {
-    console.log('Starting winner selection process...');
+  const executionStart = new Date().toISOString();
+  console.log(`[select-winner] Execution started at ${executionStart} (UTC)`);
 
-    // Create Supabase client with service role for bypassing RLS
+  const stats = {
+    execution_started_at: executionStart,
+    giveaways_checked: 0,
+    winners_selected: 0,
+    giveaways_skipped_no_entries: 0,
+    giveaways_failed: 0,
+    errors: [] as string[],
+    results: [] as { giveaway_id: string; winner_id: string | null; status: string }[],
+  };
+
+  try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Find ended giveaways that haven't had a winner selected
+    const nowUtc = new Date().toISOString();
+    console.log(`[select-winner] Checking giveaways with end_date <= ${nowUtc} AND winner_selected = false`);
+
     const { data: endedGiveaways, error: giveawayError } = await supabase
       .from('giveaways')
       .select('id, title, company_id, prize_value')
       .eq('winner_selected', false)
-      .lt('end_date', new Date().toISOString());
+      .lte('end_date', nowUtc);
 
     if (giveawayError) {
-      console.error('Error fetching ended giveaways:', giveawayError);
-      throw giveawayError;
+      console.error('[select-winner] FATAL: Failed to fetch giveaways:', giveawayError);
+      stats.errors.push(`Failed to fetch giveaways: ${giveawayError.message}`);
+      return new Response(JSON.stringify({ success: false, ...stats }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      });
     }
 
-    console.log(`Found ${endedGiveaways?.length || 0} giveaways needing winner selection`);
+    stats.giveaways_checked = endedGiveaways?.length || 0;
+    console.log(`[select-winner] Found ${stats.giveaways_checked} eligible giveaway(s)`);
 
-    // Fetch all admin user IDs for notifications
+    if (stats.giveaways_checked === 0) {
+      console.log('[select-winner] No eligible giveaways found. Exiting.');
+      return new Response(JSON.stringify({ success: true, ...stats }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // Fetch admin IDs once
     const { data: adminRoles } = await supabase
       .from('user_roles')
       .select('user_id')
       .eq('role', 'admin');
-
     const adminIds = (adminRoles || []).map(r => r.user_id);
-    console.log(`Found ${adminIds.length} admin(s) to notify`);
 
-    const results: { giveaway_id: string; winner_id: string | null; status: string }[] = [];
+    for (const giveaway of endedGiveaways!) {
+      try {
+        console.log(`[select-winner] Processing: ${giveaway.id} "${giveaway.title}"`);
 
-    for (const giveaway of endedGiveaways || []) {
-      console.log(`Processing giveaway: ${giveaway.id} - ${giveaway.title}`);
+        // Fetch ALL entries for this giveaway (PostgREST does NOT support ORDER BY RANDOM())
+        const { data: allEntries, error: entriesError } = await supabase
+          .from('giveaway_entries')
+          .select('id, user_id')
+          .eq('giveaway_id', giveaway.id);
 
-      // Select a random entry from giveaway_entries using ORDER BY RANDOM()
-      // This is the ONLY fair way - pure SQL randomness
-      const { data: randomEntry, error: entryError } = await supabase
-        .from('giveaway_entries')
-        .select('id, user_id')
-        .eq('giveaway_id', giveaway.id)
-        .order('random()')
-        .limit(1)
-        .single();
+        if (entriesError) {
+          console.error(`[select-winner] Error fetching entries for ${giveaway.id}:`, entriesError);
+          stats.giveaways_failed++;
+          stats.errors.push(`Entries fetch error for ${giveaway.id}: ${entriesError.message}`);
+          stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'error_fetching_entries' });
+          continue;
+        }
 
-      if (entryError || !randomEntry) {
-        console.log(`No entries found for giveaway ${giveaway.id}`);
-        
-        // Do NOT mark winner_selected if no entries
-        // Notify company that giveaway ended with no entries
-        if (giveaway.company_id) {
-          await supabase
-            .from('notifications')
-            .insert({
+        const entryCount = allEntries?.length || 0;
+        console.log(`[select-winner] Giveaway ${giveaway.id} has ${entryCount} entries`);
+
+        if (entryCount === 0) {
+          console.log(`[select-winner] No entries for ${giveaway.id} - skipping, will retry later`);
+          stats.giveaways_skipped_no_entries++;
+
+          if (giveaway.company_id) {
+            await supabase.from('notifications').insert({
               user_id: giveaway.company_id,
-              title: '⚠️ Giveaway Ended - No Entries',
-              message: `Your giveaway "${giveaway.title}" has ended with no entries. No winner was selected.`,
-              is_read: false
+              title: '⚠️ Giveaway Ended - No Entries Yet',
+              message: `Your giveaway "${giveaway.title}" has ended but has no entries. A winner will be selected automatically if entries are added.`,
+              is_read: false,
             });
+          }
+
+          stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'no_entries' });
+          continue;
         }
 
-        results.push({
-          giveaway_id: giveaway.id,
-          winner_id: null,
-          status: 'no_entries'
-        });
-        continue;
-      }
+        // Pick ONE random entry using crypto-safe random index
+        const randomIndex = Math.floor(Math.random() * entryCount);
+        const randomEntry = allEntries![randomIndex];
+        console.log(`[select-winner] Randomly selected entry ${randomEntry.id} (user: ${randomEntry.user_id}) from ${entryCount} entries`);
 
-      console.log(`Selected winner entry: ${randomEntry.id} for user: ${randomEntry.user_id}`);
+        // Mark entry as winner
+        const { error: updateEntryError } = await supabase
+          .from('giveaway_entries')
+          .update({ is_winner: true })
+          .eq('id', randomEntry.id);
 
-      // Mark the entry as winner
-      const { error: updateEntryError } = await supabase
-        .from('giveaway_entries')
-        .update({ is_winner: true })
-        .eq('id', randomEntry.id);
+        if (updateEntryError) {
+          console.error(`[select-winner] Error marking entry as winner:`, updateEntryError);
+          stats.giveaways_failed++;
+          stats.errors.push(`Update entry error for ${giveaway.id}: ${updateEntryError.message}`);
+          stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'error_updating_entry' });
+          continue;
+        }
 
-      if (updateEntryError) {
-        console.error('Error marking entry as winner:', updateEntryError);
-        throw updateEntryError;
-      }
+        // Mark giveaway as winner_selected
+        const { error: updateGiveawayError } = await supabase
+          .from('giveaways')
+          .update({ winner_selected: true })
+          .eq('id', giveaway.id);
 
-      // Mark the giveaway as winner_selected
-      const { error: updateGiveawayError } = await supabase
-        .from('giveaways')
-        .update({ winner_selected: true })
-        .eq('id', giveaway.id);
+        if (updateGiveawayError) {
+          console.error(`[select-winner] Error updating giveaway:`, updateGiveawayError);
+          // Rollback
+          await supabase.from('giveaway_entries').update({ is_winner: false }).eq('id', randomEntry.id);
+          stats.giveaways_failed++;
+          stats.errors.push(`Update giveaway error for ${giveaway.id}: ${updateGiveawayError.message}`);
+          stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'error_updating_giveaway' });
+          continue;
+        }
 
-      if (updateGiveawayError) {
-        console.error('Error updating giveaway:', updateGiveawayError);
-        throw updateGiveawayError;
-      }
-
-      // Insert into winners table
-      const { error: winnerError } = await supabase
-        .from('winners')
-        .insert({
-          giveaway_id: giveaway.id,
-          user_id: randomEntry.user_id,
-          notified: true
-        });
-
-      if (winnerError) {
-        console.error('Error inserting winner:', winnerError);
-        // Continue anyway, don't throw
-      }
-
-      // Get winner's profile info for notifications
-      const { data: winnerProfile } = await supabase
-        .from('profiles')
-        .select('full_name, email')
-        .eq('id', randomEntry.user_id)
-        .single();
-
-      const winnerName = winnerProfile?.full_name || winnerProfile?.email || 'A user';
-      const prizeText = giveaway.prize_value ? ` ($${giveaway.prize_value})` : '';
-
-      // === NOTIFICATION 1: Notify the WINNER ===
-      const winnerNotificationTitle = '🎉 Congratulations! You Won!';
-      const winnerNotificationMessage = `You have been selected as the winner of "${giveaway.title}"${prizeText}. Check your dashboard for more details!`;
-
-      const { error: winnerNotifError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: randomEntry.user_id,
-          title: winnerNotificationTitle,
-          message: winnerNotificationMessage,
-          is_read: false
-        });
-
-      if (winnerNotifError) {
-        console.error('Error creating winner notification:', winnerNotifError);
-      } else {
-        console.log(`Notification created for winner ${randomEntry.user_id}`);
-      }
-
-      // === NOTIFICATION 2: Notify the COMPANY ===
-      if (giveaway.company_id) {
-        const companyNotificationTitle = '🏆 Winner Selected for Your Giveaway';
-        const companyNotificationMessage = `${winnerName} has been selected as the winner of your giveaway "${giveaway.title}"${prizeText}.`;
-
-        const { error: companyNotifError } = await supabase
-          .from('notifications')
+        // Insert into winners table
+        const { error: winnerInsertError } = await supabase
+          .from('winners')
           .insert({
+            giveaway_id: giveaway.id,
+            user_id: randomEntry.user_id,
+            notified: true,
+          });
+
+        if (winnerInsertError) {
+          console.error(`[select-winner] Error inserting winner record:`, winnerInsertError);
+          stats.errors.push(`Winners insert error for ${giveaway.id}: ${winnerInsertError.message}`);
+        }
+
+        stats.winners_selected++;
+
+        // Get winner profile for notifications
+        const { data: winnerProfile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', randomEntry.user_id)
+          .single();
+
+        const winnerName = winnerProfile?.full_name || winnerProfile?.email || 'A user';
+        const prizeText = giveaway.prize_value ? ` ($${giveaway.prize_value})` : '';
+
+        // NOTIFICATION 1: Winner
+        await supabase.from('notifications').insert({
+          user_id: randomEntry.user_id,
+          title: '🎉 Congratulations! You Won!',
+          message: `You have been selected as the winner of "${giveaway.title}"${prizeText}. Check your dashboard for more details!`,
+          is_read: false,
+        });
+
+        // NOTIFICATION 2: Company
+        if (giveaway.company_id) {
+          await supabase.from('notifications').insert({
             user_id: giveaway.company_id,
-            title: companyNotificationTitle,
-            message: companyNotificationMessage,
-            is_read: false
+            title: '🏆 Winner Selected for Your Giveaway',
+            message: `${winnerName} has been selected as the winner of your giveaway "${giveaway.title}"${prizeText}.`,
+            is_read: false,
           });
-
-        if (companyNotifError) {
-          console.error('Error creating company notification:', companyNotifError);
-        } else {
-          console.log(`Notification created for company ${giveaway.company_id}`);
         }
-      }
 
-      // === NOTIFICATION 3: Notify all ADMINS ===
-      for (const adminId of adminIds) {
-        const adminNotificationTitle = '📊 Winner Selected';
-        const adminNotificationMessage = `Winner selected for "${giveaway.title}": ${winnerName}${prizeText}.`;
-
-        const { error: adminNotifError } = await supabase
-          .from('notifications')
-          .insert({
+        // NOTIFICATION 3: Admins
+        for (const adminId of adminIds) {
+          await supabase.from('notifications').insert({
             user_id: adminId,
-            title: adminNotificationTitle,
-            message: adminNotificationMessage,
-            is_read: false
+            title: '📊 Winner Selected',
+            message: `Winner selected for "${giveaway.title}": ${winnerName}${prizeText}.`,
+            is_read: false,
           });
-
-        if (adminNotifError) {
-          console.error(`Error creating admin notification for ${adminId}:`, adminNotifError);
-        } else {
-          console.log(`Notification created for admin ${adminId}`);
         }
-      }
 
-      results.push({
-        giveaway_id: giveaway.id,
-        winner_id: randomEntry.user_id,
-        status: 'winner_selected'
-      });
+        stats.results.push({ giveaway_id: giveaway.id, winner_id: randomEntry.user_id, status: 'winner_selected' });
+        console.log(`[select-winner] ✅ Winner selected for ${giveaway.id}: ${randomEntry.user_id}`);
+
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Unknown error';
+        console.error(`[select-winner] Error processing giveaway ${giveaway.id}:`, err);
+        stats.giveaways_failed++;
+        stats.errors.push(`Processing error for ${giveaway.id}: ${msg}`);
+        stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'error' });
+        // Continue to next giveaway
+      }
     }
 
-    console.log('Winner selection complete. Results:', results);
+    console.log(`[select-winner] Execution complete:`, JSON.stringify(stats));
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        processed: results.length,
-        results
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200
-      }
-    );
+    return new Response(JSON.stringify({ success: true, ...stats }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
 
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('Error in select-winner function:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMessage
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
-      }
-    );
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[select-winner] FATAL error:', error);
+    stats.errors.push(`Fatal: ${errorMessage}`);
+    return new Response(JSON.stringify({ success: false, ...stats }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
   }
 });
