@@ -128,13 +128,13 @@ export const PromotionSlider = ({ autoScrollInterval = 4000 }: PromotionSliderPr
         {/* Scroll container - single card centered on mobile, multiple on larger screens */}
         <div 
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-1 justify-center sm:justify-start"
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory pb-1 sm:justify-start px-[calc((100vw-85%)/2)] sm:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {promotions.map((promotion) => (
             <Card 
               key={promotion.id} 
-              className="promotion-card flex-shrink-0 w-[calc(100vw-32px)] max-w-[320px] sm:w-[280px] md:w-[320px] overflow-hidden cursor-pointer snap-center sm:snap-start rounded-xl border border-border/50 shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] bg-transparent"
+              className="promotion-card flex-shrink-0 w-[85vw] sm:w-[280px] md:w-[320px] overflow-hidden cursor-pointer snap-center sm:snap-start rounded-xl border border-border/50 shadow-md hover:shadow-lg transition-all duration-300 active:scale-[0.98] bg-transparent"
               onClick={() => navigate(`/promotion/${promotion.id}`)}
             >
               {/* Image Section - Image only, no text overlays */}

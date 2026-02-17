@@ -493,6 +493,7 @@ export type Database = {
       }
       winners: {
         Row: {
+          display_name: string | null
           giveaway_id: string
           id: string
           notified: boolean
@@ -500,6 +501,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          display_name?: string | null
           giveaway_id: string
           id?: string
           notified?: boolean
@@ -507,6 +509,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          display_name?: string | null
           giveaway_id?: string
           id?: string
           notified?: boolean

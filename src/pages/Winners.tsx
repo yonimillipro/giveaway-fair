@@ -11,10 +11,9 @@ import { format } from "date-fns";
 interface WinnerEntry {
   id: string;
   selected_at: string;
-  giveaway_id: string;
+  display_name: string | null;
   giveaway_title: string;
   giveaway_prize_value: number | null;
-  winner_name: string;
   company_name: string;
   company_logo: string | null;
 }
@@ -29,42 +28,20 @@ const Winners = () => {
 
   const fetchWinners = async () => {
     try {
-      // Fetch winners with giveaway info
+      // Fetch winners with giveaway join - winners table is publicly readable
       const { data: winnersData, error } = await supabase
         .from("winners")
-        .select("id, selected_at, giveaway_id, user_id, giveaways(title, prize_value, company_id)")
+        .select("id, selected_at, display_name, giveaway_id, giveaways(title, prize_value, company_id)")
         .order("selected_at", { ascending: false })
         .limit(50);
 
       if (error) throw error;
 
-      // Process each winner to get names
+      // Process to get company info via edge function (avoids RLS on profiles)
       const processed = await Promise.all(
         (winnersData || []).map(async (w: any) => {
           const giveaway = w.giveaways;
 
-          // Get winner display name (masked)
-          let winnerName = "Anonymous Winner";
-          try {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name, email")
-              .eq("id", w.user_id)
-              .maybeSingle();
-
-            if (profile?.full_name) {
-              // Mask: show first 2 chars + ***
-              const name = profile.full_name;
-              winnerName = name.length > 2 ? name.slice(0, 2) + "***" : name + "***";
-            } else if (profile?.email) {
-              const emailPart = profile.email.split("@")[0];
-              winnerName = emailPart.length > 2 ? emailPart.slice(0, 2) + "***" : emailPart + "***";
-            }
-          } catch {
-            // Profile may not be visible due to RLS - that's fine
-          }
-
-          // Get company info via edge function
           let companyName = "Unknown Company";
           let companyLogo: string | null = null;
           if (giveaway?.company_id) {
@@ -82,10 +59,9 @@ const Winners = () => {
           return {
             id: w.id,
             selected_at: w.selected_at,
-            giveaway_id: w.giveaway_id,
+            display_name: w.display_name,
             giveaway_title: giveaway?.title || "Unknown Giveaway",
             giveaway_prize_value: giveaway?.prize_value || null,
-            winner_name: winnerName,
             company_name: companyName,
             company_logo: companyLogo,
           };
@@ -150,7 +126,7 @@ const Winners = () => {
                       <div className="flex items-center gap-2 mt-1">
                         <Trophy className="w-3.5 h-3.5 text-primary" />
                         <span className="text-xs sm:text-sm font-medium text-primary">
-                          {winner.winner_name}
+                          {winner.display_name || "Lucky Winner"}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           · {format(new Date(winner.selected_at), "MMM dd, yyyy")}

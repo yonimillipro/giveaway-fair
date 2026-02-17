@@ -134,7 +134,8 @@ const Header = () => {
               </Button>
             )}
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - hidden on home page */}
+            {location.pathname !== "/" && (
             <Button
               variant="ghost"
               size="icon"
@@ -147,6 +148,7 @@ const Header = () => {
                 <Menu className="w-5 h-5" />
               )}
             </Button>
+            )}
           </div>
         </div>
 
