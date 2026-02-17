@@ -5,6 +5,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
+function maskName(fullName: string): string {
+  if (!fullName || fullName.trim().length === 0) return 'Winner';
+  
+  const parts = fullName.trim().split(/\s+/);
+  return parts.map(part => {
+    if (part.length <= 3) {
+      return part.charAt(0) + '*'.repeat(part.length - 1 || 1);
+    }
+    const showChars = Math.min(3, Math.ceil(part.length * 0.4));
+    return part.slice(0, showChars) + '*'.repeat(part.length - showChars);
+  }).join(' ');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -68,7 +81,6 @@ Deno.serve(async (req) => {
       try {
         console.log(`[select-winner] Processing: ${giveaway.id} "${giveaway.title}"`);
 
-        // Fetch ALL entries for this giveaway (PostgREST does NOT support ORDER BY RANDOM())
         const { data: allEntries, error: entriesError } = await supabase
           .from('giveaway_entries')
           .select('id, user_id')
@@ -102,7 +114,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Pick ONE random entry using crypto-safe random index
+        // Pick ONE random entry
         const randomIndex = Math.floor(Math.random() * entryCount);
         const randomEntry = allEntries![randomIndex];
         console.log(`[select-winner] Randomly selected entry ${randomEntry.id} (user: ${randomEntry.user_id}) from ${entryCount} entries`);
@@ -129,7 +141,6 @@ Deno.serve(async (req) => {
 
         if (updateGiveawayError) {
           console.error(`[select-winner] Error updating giveaway:`, updateGiveawayError);
-          // Rollback
           await supabase.from('giveaway_entries').update({ is_winner: false }).eq('id', randomEntry.id);
           stats.giveaways_failed++;
           stats.errors.push(`Update giveaway error for ${giveaway.id}: ${updateGiveawayError.message}`);
@@ -137,13 +148,27 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Insert into winners table
+        // Get winner profile for display name
+        const { data: winnerProfile } = await supabase
+          .from('profiles')
+          .select('full_name, email')
+          .eq('id', randomEntry.user_id)
+          .single();
+
+        const rawName = winnerProfile?.full_name || '';
+        const maskedDisplayName = rawName ? maskName(rawName) : 'Lucky Winner';
+
+        const winnerName = winnerProfile?.full_name || winnerProfile?.email || 'A user';
+        const prizeText = giveaway.prize_value ? ` ($${giveaway.prize_value})` : '';
+
+        // Insert into winners table with masked display_name
         const { error: winnerInsertError } = await supabase
           .from('winners')
           .insert({
             giveaway_id: giveaway.id,
             user_id: randomEntry.user_id,
             notified: true,
+            display_name: maskedDisplayName,
           });
 
         if (winnerInsertError) {
@@ -152,16 +177,6 @@ Deno.serve(async (req) => {
         }
 
         stats.winners_selected++;
-
-        // Get winner profile for notifications
-        const { data: winnerProfile } = await supabase
-          .from('profiles')
-          .select('full_name, email')
-          .eq('id', randomEntry.user_id)
-          .single();
-
-        const winnerName = winnerProfile?.full_name || winnerProfile?.email || 'A user';
-        const prizeText = giveaway.prize_value ? ` ($${giveaway.prize_value})` : '';
 
         // NOTIFICATION 1: Winner
         await supabase.from('notifications').insert({
@@ -192,7 +207,7 @@ Deno.serve(async (req) => {
         }
 
         stats.results.push({ giveaway_id: giveaway.id, winner_id: randomEntry.user_id, status: 'winner_selected' });
-        console.log(`[select-winner] ✅ Winner selected for ${giveaway.id}: ${randomEntry.user_id}`);
+        console.log(`[select-winner] ✅ Winner selected for ${giveaway.id}: ${randomEntry.user_id} (${maskedDisplayName})`);
 
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Unknown error';
@@ -200,7 +215,6 @@ Deno.serve(async (req) => {
         stats.giveaways_failed++;
         stats.errors.push(`Processing error for ${giveaway.id}: ${msg}`);
         stats.results.push({ giveaway_id: giveaway.id, winner_id: null, status: 'error' });
-        // Continue to next giveaway
       }
     }
 
