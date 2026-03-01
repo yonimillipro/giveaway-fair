@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import UserDashboard from "./pages/UserDashboard";
 import CompanyDashboard from "./pages/CompanyDashboard";
+import CompanyStatus from "./pages/CompanyStatus";
 import AdminDashboard from "./pages/AdminDashboard";
 import Promotions from "./pages/Promotions";
 import PromotionDetail from "./pages/PromotionDetail";
@@ -95,6 +96,14 @@ const App = () => (
                   element={
                     <ProtectedRoute allowedRoles={["company"]}>
                       <CompanyDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/company-status"
+                  element={
+                    <ProtectedRoute allowedRoles={["company"]}>
+                      <CompanyStatus />
                     </ProtectedRoute>
                   }
                 />

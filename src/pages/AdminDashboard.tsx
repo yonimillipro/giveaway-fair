@@ -52,6 +52,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminInfluencers } from "@/components/admin/AdminInfluencers";
 
 interface User {
   id: string;
@@ -208,6 +210,7 @@ const AdminDashboard = () => {
   const [promotionSearch, setPromotionSearch] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [userRoleFilter, setUserRoleFilter] = useState<string>("all");
+  const [activeSection, setActiveSection] = useState("overview");
 
   const resetGiveawayForm = () => {
     setGiveawayFormData({
@@ -267,7 +270,8 @@ const AdminDashboard = () => {
     const matchesSearch =
       u.email.toLowerCase().includes(searchLower) ||
       u.full_name.toLowerCase().includes(searchLower);
-    const matchesRole = userRoleFilter === "all" || u.role === userRoleFilter;
+    const effectiveRoleFilter = activeSection === "companies" ? "company" : userRoleFilter;
+    const matchesRole = effectiveRoleFilter === "all" || u.role === effectiveRoleFilter;
     return matchesSearch && matchesRole;
   });
 
@@ -1145,7 +1149,9 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
+      <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <div className="flex-1 min-w-0 overflow-auto">
       <header className="border-b">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
@@ -1162,7 +1168,7 @@ const AdminDashboard = () => {
       </header>
 
       <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        {/* Action Buttons */}
+        {(activeSection === "overview" || activeSection === "giveaways" || activeSection === "promotions" || activeSection === "companies") && (
         <div className="flex flex-wrap gap-2 sm:gap-4 mb-4 sm:mb-8">
           <Dialog
             open={isCompanyDialogOpen}
@@ -1825,7 +1831,10 @@ const AdminDashboard = () => {
             </DialogContent>
           </Dialog>
         </div>
+        )}
 
+        {activeSection === "overview" && (
+        <>
         {/* Stats Cards */}
         <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 md:gap-6 mb-4 sm:mb-8">
           <Card>
@@ -1878,8 +1887,11 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
-        {/* -------------------------------------------------------------------------- */}
+        </>
+        )}
 
+        {(activeSection === "overview" || activeSection === "giveaways") && (
+        <>
         {/* Giveaways Table (CRUD - R, U, D) */}
         <Card className="mb-4 sm:mb-8">
           <CardHeader className="p-3 sm:p-6">
@@ -1981,8 +1993,11 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
-        {/* -------------------------------------------------------------------------- */}
+        </>
+        )}
 
+        {(activeSection === "overview" || activeSection === "promotions") && (
+        <>
         {/* Promotions Table */}
         <Card className="mb-4 sm:mb-8">
           <CardHeader className="p-3 sm:p-6">
@@ -2090,8 +2105,11 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
-        {/* -------------------------------------------------------------------------- */}
+        </>
+        )}
 
+        {(activeSection === "overview" || activeSection === "winners") && (
+        <>
         {/* Winners Table */}
         <Card className="mb-4 sm:mb-8">
           <CardHeader className="p-3 sm:p-6">
@@ -2152,8 +2170,11 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
-        {/* -------------------------------------------------------------------------- */}
+        </>
+        )}
 
+        {(activeSection === "overview" || activeSection === "users" || activeSection === "companies") && (
+        <>
         {/* Users Table */}
         <Card>
           <CardHeader className="p-3 sm:p-6">
@@ -2259,6 +2280,12 @@ const AdminDashboard = () => {
             )}
           </CardContent>
         </Card>
+        </>
+        )}
+
+        {activeSection === "influencers" && (
+          <AdminInfluencers />
+        )}
 
         {/* Edit User Dialog */}
         <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
@@ -2409,6 +2436,7 @@ const AdminDashboard = () => {
           </DialogContent>
         </Dialog>
       </main>
+      </div>
     </div>
   );
 };

@@ -252,6 +252,36 @@ export type Database = {
         }
         Relationships: []
       }
+      influencers: {
+        Row: {
+          amount_of_followers: number
+          created_at: string
+          id: string
+          name: string
+          primary_platform: string
+          profile_image_url: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_of_followers?: number
+          created_at?: string
+          id?: string
+          name: string
+          primary_platform: string
+          profile_image_url?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_of_followers?: number
+          created_at?: string
+          id?: string
+          name?: string
+          primary_platform?: string
+          profile_image_url?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -532,6 +562,14 @@ export type Database = {
     }
     Functions: {
       get_company_follower_count: {
+        Args: { company_uuid: string }
+        Returns: number
+      }
+      get_company_followers_count: {
+        Args: { company_uuid: string }
+        Returns: number
+      }
+      get_company_likes_count: {
         Args: { company_uuid: string }
         Returns: number
       }
