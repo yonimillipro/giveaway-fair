@@ -32,6 +32,8 @@ import {
   Gift,
   Package,
   Trash2,
+  Star,
+  BarChart3,
 } from "lucide-react";
 import { GiveawayCard } from "../components/GiveawayCard";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +65,14 @@ interface Product {
   created_at: string;
 }
 
+interface Influencer {
+  id: string;
+  name: string;
+  profile_image_url: string | null;
+  amount_of_followers: number;
+  primary_platform: string;
+}
+
 const CompanyDashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -71,6 +81,8 @@ const CompanyDashboard = () => {
   useNotificationToasts();
   const [giveaways, setGiveaways] = useState<Giveaway[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [influencersLoading, setInfluencersLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [companyProfile, setCompanyProfile] = useState<{ logo_url?: string; full_name?: string } | null>(null);
   const [giveawayDialogOpen, setGiveawayDialogOpen] = useState(false);
@@ -94,8 +106,20 @@ const CompanyDashboard = () => {
       fetchCompanyProfile();
       fetchGiveaways();
       fetchProducts();
+      fetchInfluencers();
     }
   }, [user]);
+
+  const fetchInfluencers = async () => {
+    setInfluencersLoading(true);
+    const { data } = await supabase
+      .from("influencers")
+      .select("id, name, profile_image_url, amount_of_followers, primary_platform")
+      .order("amount_of_followers", { ascending: false })
+      .limit(50);
+    setInfluencers(data || []);
+    setInfluencersLoading(false);
+  };
 
   const fetchCompanyProfile = async () => {
     if (!user) return;
@@ -307,6 +331,10 @@ const CompanyDashboard = () => {
             </span>
             <ThemeToggle />
             <NotificationBell />
+            <Button variant="outline" size="sm" onClick={() => navigate("/company-status")} className="text-xs sm:text-sm px-2 sm:px-3 hidden sm:flex">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Status</span>
+            </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs sm:text-sm px-2 sm:px-3">
               <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
               <span className="hidden sm:inline">Sign Out</span>
@@ -362,12 +390,16 @@ const CompanyDashboard = () => {
         </div>
 
         <Tabs defaultValue="giveaways" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:max-w-md h-8 sm:h-10">
+          <TabsList className="grid w-full grid-cols-3 md:max-w-lg h-8 sm:h-10">
             <TabsTrigger value="giveaways" className="text-xs sm:text-sm">
               Giveaways ({giveaways.length})
             </TabsTrigger>
             <TabsTrigger value="products" className="text-xs sm:text-sm">
               Products ({products.length})
+            </TabsTrigger>
+            <TabsTrigger value="influencers" className="text-xs sm:text-sm">
+              <Star className="w-3 h-3 mr-1" />
+              Influencers
             </TabsTrigger>
           </TabsList>
 
@@ -643,6 +675,67 @@ const CompanyDashboard = () => {
                               <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
                             </Button>
                           </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Influencers Tab */}
+          <TabsContent value="influencers" className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
+            <Card>
+              <CardHeader className="p-3 sm:p-6">
+                <CardTitle className="text-base sm:text-2xl flex items-center gap-2">
+                  <Star className="w-5 h-5 text-primary" />
+                  Top Influencers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-2 sm:p-6">
+                {influencersLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-muted-foreground">Loading influencers...</p>
+                  </div>
+                ) : influencers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Star className="w-10 h-10 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-sm text-muted-foreground">No influencers available yet.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
+                    {influencers.map((inf) => (
+                      <Card key={inf.id} className="overflow-hidden">
+                        <div className="aspect-square w-full overflow-hidden bg-muted flex items-center justify-center">
+                          {inf.profile_image_url ? (
+                            <img
+                              src={inf.profile_image_url}
+                              alt={inf.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <Star className="w-10 h-10 text-muted-foreground/30" />
+                          )}
+                        </div>
+                        <CardContent className="p-2 sm:p-3">
+                          <h3 className="font-semibold text-xs sm:text-sm truncate">{inf.name}</h3>
+                          <p className="text-xs text-muted-foreground">
+                            {inf.amount_of_followers >= 1_000_000
+                              ? `${(inf.amount_of_followers / 1_000_000).toFixed(1)}M`
+                              : inf.amount_of_followers >= 1_000
+                              ? `${(inf.amount_of_followers / 1_000).toFixed(1)}K`
+                              : inf.amount_of_followers}{" "}
+                            followers
+                          </p>
+                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            {inf.primary_platform}
+                          </span>
                         </CardContent>
                       </Card>
                     ))}
