@@ -256,28 +256,34 @@ export type Database = {
         Row: {
           amount_of_followers: number
           created_at: string
+          email: string | null
           id: string
           name: string
           primary_platform: string
           profile_image_url: string | null
+          social_handle: string | null
           updated_at: string | null
         }
         Insert: {
           amount_of_followers?: number
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           primary_platform: string
           profile_image_url?: string | null
+          social_handle?: string | null
           updated_at?: string | null
         }
         Update: {
           amount_of_followers?: number
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           primary_platform?: string
           profile_image_url?: string | null
+          social_handle?: string | null
           updated_at?: string | null
         }
         Relationships: []
