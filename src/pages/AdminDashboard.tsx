@@ -1157,6 +1157,14 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between">
             <h1 className="text-lg sm:text-2xl font-bold">Admin Dashboard</h1>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <Button
+                size="sm"
+                onClick={() => setActiveSection("influencers")}
+                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
+              >
+                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Create Influencer</span>
+              </Button>
               <ThemeToggle />
               <Button variant="outline" size="sm" onClick={signOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
                 <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
