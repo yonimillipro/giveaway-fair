@@ -331,8 +331,8 @@ const CompanyDashboard = () => {
             </span>
             <ThemeToggle />
             <NotificationBell />
-            <Button variant="outline" size="sm" onClick={() => navigate("/company-status")} className="text-xs sm:text-sm px-2 sm:px-3 hidden sm:flex">
-              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+            <Button variant="outline" size="sm" onClick={() => navigate("/company-status")} className="text-xs sm:text-sm px-2 sm:px-3">
+              <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
               <span className="hidden sm:inline">Status</span>
             </Button>
             <Button variant="outline" size="sm" onClick={handleSignOut} className="text-xs sm:text-sm px-2 sm:px-3">
