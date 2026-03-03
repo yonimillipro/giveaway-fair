@@ -1152,25 +1152,32 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background flex">
       <AdminSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
       <div className="flex-1 min-w-0 overflow-auto">
-      <header className="border-b">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg sm:text-2xl font-bold">Admin Dashboard</h1>
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <Button
-                size="sm"
-                onClick={() => setActiveSection("influencers")}
-                className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm"
-              >
-                <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Create Influencer</span>
-              </Button>
-              <ThemeToggle />
-              <Button variant="outline" size="sm" onClick={signOut} className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm">
-                <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </Button>
-            </div>
+      <header className="border-b h-14 sm:h-16 flex items-center">
+        <div className="w-full px-4 sm:px-6 flex items-center justify-between min-w-0">
+          {/* Left: spacer for hamburger on mobile + title */}
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Spacer matching the fixed hamburger button width on mobile */}
+            <div className="w-10 shrink-0 md:hidden" aria-hidden="true" />
+            <h1 className="text-base sm:text-xl md:text-2xl font-bold truncate">
+              Admin Dashboard
+            </h1>
+          </div>
+          {/* Right: actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <Button
+              size="sm"
+              onClick={() => setActiveSection("influencers")}
+              className="h-9 w-9 sm:w-auto sm:h-9 p-0 sm:px-3 text-xs sm:text-sm"
+              aria-label="Create Influencer"
+            >
+              <UserPlus className="w-4 h-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Create Influencer</span>
+            </Button>
+            <ThemeToggle />
+            <Button variant="outline" size="sm" onClick={signOut} className="h-9 w-9 sm:w-auto sm:h-9 p-0 sm:px-3 text-xs sm:text-sm" aria-label="Sign Out">
+              <LogOut className="w-4 h-4 sm:mr-1.5" />
+              <span className="hidden sm:inline">Sign Out</span>
+            </Button>
           </div>
         </div>
       </header>
