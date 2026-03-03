@@ -143,11 +143,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: `${window.location.origin}/auth/callback`,
-    });
-
-    return { error: error || null };
+    const isLovableDomain = window.location.hostname.endsWith('.lovable.app');
+    
+    if (isLovableDomain) {
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: `${window.location.origin}/auth/callback`,
+      });
+      return { error: error || null };
+    } else {
+      // On Vercel/custom domains, use standard Supabase OAuth
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+      return { error: error || null };
+    }
   };
 
   const signOut = async () => {
