@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { cn } from "@/lib/utils";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -34,7 +35,9 @@ import {
   Trash2,
   Star,
   BarChart3,
+  ExternalLink,
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../components/ui/tooltip";
 import { GiveawayCard } from "../components/GiveawayCard";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "../components/ThemeToggle";
@@ -71,7 +74,19 @@ interface Influencer {
   profile_image_url: string | null;
   amount_of_followers: number;
   primary_platform: string;
+  social_handle: string | null;
 }
+
+const getInfluencerPlatformUrl = (platform: string, handle: string | null): string | null => {
+  if (!handle) return null;
+  const cleanHandle = handle.replace(/^@/, "");
+  const platformLower = platform.toLowerCase();
+  if (platformLower === "tiktok") return `https://www.tiktok.com/@${cleanHandle}`;
+  if (platformLower === "youtube") return `https://www.youtube.com/@${cleanHandle}`;
+  if (platformLower === "instagram") return `https://www.instagram.com/${cleanHandle}`;
+  if (platformLower === "twitter" || platformLower === "x") return `https://x.com/${cleanHandle}`;
+  return null;
+};
 
 const CompanyDashboard = () => {
   const { user, signOut } = useAuth();
@@ -114,7 +129,7 @@ const CompanyDashboard = () => {
     setInfluencersLoading(true);
     const { data } = await supabase
       .from("influencers")
-      .select("id, name, profile_image_url, amount_of_followers, primary_platform")
+      .select("id, name, profile_image_url, amount_of_followers, primary_platform, social_handle")
       .order("amount_of_followers", { ascending: false })
       .limit(50);
     setInfluencers(data || []);
@@ -705,40 +720,82 @@ const CompanyDashboard = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
-                    {influencers.map((inf) => (
-                      <Card key={inf.id} className="overflow-hidden">
-                        <div className="aspect-square w-full overflow-hidden bg-muted flex items-center justify-center">
-                          {inf.profile_image_url ? (
-                            <img
-                              src={inf.profile_image_url}
-                              alt={inf.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.onerror = null;
-                                target.style.display = "none";
-                              }}
-                            />
-                          ) : (
-                            <Star className="w-10 h-10 text-muted-foreground/30" />
+                    {influencers.map((inf) => {
+                      const platformUrl = getInfluencerPlatformUrl(inf.primary_platform, inf.social_handle);
+                      const isClickable = !!platformUrl;
+
+                      const cardContent = (
+                        <Card
+                          className={cn(
+                            "overflow-hidden transition-all duration-200",
+                            isClickable
+                              ? "cursor-pointer hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.98]"
+                              : "opacity-80"
                           )}
-                        </div>
-                        <CardContent className="p-2 sm:p-3">
-                          <h3 className="font-semibold text-xs sm:text-sm truncate">{inf.name}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {inf.amount_of_followers >= 1_000_000
-                              ? `${(inf.amount_of_followers / 1_000_000).toFixed(1)}M`
-                              : inf.amount_of_followers >= 1_000
-                              ? `${(inf.amount_of_followers / 1_000).toFixed(1)}K`
-                              : inf.amount_of_followers}{" "}
-                            followers
-                          </p>
-                          <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                            {inf.primary_platform}
-                          </span>
-                        </CardContent>
-                      </Card>
-                    ))}
+                        >
+                          <div className="aspect-square w-full overflow-hidden bg-muted flex items-center justify-center relative">
+                            {inf.profile_image_url ? (
+                              <img
+                                src={inf.profile_image_url}
+                                alt={inf.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.onerror = null;
+                                  target.style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <Star className="w-10 h-10 text-muted-foreground/30" />
+                            )}
+                            {isClickable && (
+                              <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-sm rounded-full p-1">
+                                <ExternalLink className="w-3 h-3 text-muted-foreground" />
+                              </div>
+                            )}
+                          </div>
+                          <CardContent className="p-2 sm:p-3">
+                            <h3 className="font-semibold text-xs sm:text-sm truncate">{inf.name}</h3>
+                            <p className="text-xs text-muted-foreground">
+                              {inf.amount_of_followers >= 1_000_000
+                                ? `${(inf.amount_of_followers / 1_000_000).toFixed(1)}M`
+                                : inf.amount_of_followers >= 1_000
+                                ? `${(inf.amount_of_followers / 1_000).toFixed(1)}K`
+                                : inf.amount_of_followers}{" "}
+                              followers
+                            </p>
+                            <span className="inline-block mt-1 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              {inf.primary_platform}
+                            </span>
+                          </CardContent>
+                        </Card>
+                      );
+
+                      if (isClickable) {
+                        return (
+                          <a
+                            key={inf.id}
+                            href={platformUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block min-h-[44px]"
+                          >
+                            {cardContent}
+                          </a>
+                        );
+                      }
+
+                      return (
+                        <Tooltip key={inf.id}>
+                          <TooltipTrigger asChild>
+                            <div className="min-h-[44px]">{cardContent}</div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Platform link not available</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

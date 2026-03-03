@@ -39,13 +39,14 @@ export const AdminSidebar = ({
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 md:hidden h-8 w-8"
+        className="fixed top-2.5 left-2 z-50 md:hidden h-10 w-10 flex items-center justify-center"
         onClick={() => setMobileOpen(!mobileOpen)}
+        aria-label="Toggle sidebar"
       >
         {mobileOpen ? (
-          <X className="h-4 w-4" />
+          <X className="h-5 w-5" />
         ) : (
-          <Menu className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         )}
       </Button>
 

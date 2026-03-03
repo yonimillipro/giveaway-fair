@@ -30,6 +30,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import FAQ from "./pages/FAQ";
 import Status from "./pages/Status";
 import Winners from "./pages/Winners";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <CompanyFollowProvider>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/promotions" element={<Promotions />} />
                 <Route path="/promotion/:id" element={<PromotionDetail />} />
